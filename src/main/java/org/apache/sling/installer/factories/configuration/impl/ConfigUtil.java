@@ -194,6 +194,12 @@ abstract class ConfigUtil {
                         + "))");
             }
             if (configs == null || configs.length == 0) {
+                configs = ca.listConfigurations("(&("
+                        + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
+                        + ")(" + Constants.SERVICE_PID + "=" + encode(factoryPid + "." + configPid)
+                        + "))");
+            }
+            if (configs == null || configs.length == 0) {
                 // check for old style with alias pid
                 configs = ca.listConfigurations(
                         "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID
