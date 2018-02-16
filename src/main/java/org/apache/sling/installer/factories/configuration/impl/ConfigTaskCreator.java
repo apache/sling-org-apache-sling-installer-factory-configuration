@@ -106,7 +106,7 @@ public class ConfigTaskCreator
             } else {
                 pid = (event.getPid().startsWith(event.getFactoryPid() + '.') ?
                         event.getPid().substring(event.getFactoryPid().length() + 1) : event.getPid());
-                id = event.getFactoryPid() + '.' + event.getPid();
+                id = event.getFactoryPid() + '.' + pid;
             }
             if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
@@ -191,22 +191,7 @@ public class ConfigTaskCreator
         final String configPid;
         int n = pid.indexOf('-');
         if (n > 0) {
-            // quick check if this is an existing configuration
-            final String fString = pid.substring(0, n);
-            final String cString = pid.substring(n + 1);
-            boolean useExtendedPid = false;
-            try {
-                if ( ConfigUtil.getConfiguration(this.configAdmin, fString, fString + '.' + cString) != null ) {
-                    useExtendedPid = true;
-                }
-            } catch ( final Exception ignore) {
-                // ignore this
-            }
-            if ( useExtendedPid ) {
-                configPid = fString + '.' + cString;
-            } else {
-                configPid = pid.substring(n + 1);
-            }
+            configPid = pid.substring(n + 1);
             factoryPid = pid.substring(0, n);
         } else {
             factoryPid = null;

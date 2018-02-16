@@ -18,14 +18,19 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class ConfigUtilTest {
 
@@ -104,5 +109,45 @@ public class ConfigUtilTest {
 
         assertTrue(ConfigUtil.isSameData(a, b));
         assertTrue(ConfigUtil.isSameData(b, a));
+    }
+
+    @Test public void testGetOrCreateConfiguration() throws Exception {
+        Configuration c1 = Mockito.mock(Configuration.class);
+        Configuration c2 = Mockito.mock(Configuration.class);
+        ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
+        Mockito.when(cm.listConfigurations(
+                "(&(service.factoryPid=a.b.c)(service.pid=c1))"))
+                .thenReturn(new Configuration[] {c1});
+        Mockito.when(cm.listConfigurations(
+                "(&(service.factoryPid=a.b.c)(service.pid=a.b.c.c1))"))
+                .thenReturn(new Configuration[] {c2});
+        Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
+        assertSame(c1, cfg);
+    }
+
+    @Test public void testGetOrCreateConfigurationFactoryPrefix() throws Exception {
+        Configuration c1 = Mockito.mock(Configuration.class);
+        Configuration c2 = Mockito.mock(Configuration.class);
+        ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
+        Mockito.when(cm.listConfigurations(
+                "(&(service.factoryPid=a.b.c)(service.pid=a.b.c.c1))"))
+                .thenReturn(new Configuration[] {c1});
+        Mockito.when(cm.listConfigurations(
+                "(&(service.factoryPid=a.b.c)(org.apache.sling.installer.osgi.factoryaliaspid=c1))"))
+                .thenReturn(new Configuration[] {c2});
+        Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
+        assertSame(c1, cfg);
+
+        assertNull(ConfigUtil.getConfiguration(cm, "a.b.c", "c2"));
+    }
+
+    @Test public void testGetOrCreateConfigurationAliasKey() throws Exception {
+        Configuration c1 = Mockito.mock(Configuration.class);
+        ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
+        Mockito.when(cm.listConfigurations(
+                "(&(service.factoryPid=a.b.c)(org.apache.sling.installer.osgi.factoryaliaspid=c1))"))
+                .thenReturn(new Configuration[] {c1});
+        Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
+        assertSame(c1, cfg);
     }
 }
