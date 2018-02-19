@@ -81,7 +81,7 @@ abstract class AbstractConfigTask extends InstallTask {
             return null;
         }
         final String alias;
-        if (this.aliasPid.startsWith(this.factoryPid)) {
+        if (this.aliasPid.startsWith(this.factoryPid + ".")) {
             alias = this.aliasPid;
         } else {
             alias = this.factoryPid + "." + this.aliasPid;
