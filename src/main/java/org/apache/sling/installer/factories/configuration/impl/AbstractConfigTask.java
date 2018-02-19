@@ -80,7 +80,12 @@ abstract class AbstractConfigTask extends InstallTask {
         if ( this.aliasPid == null || this.factoryPid == null ) {
             return null;
         }
-        final String alias = factoryPid + "." + this.aliasPid;
+        final String alias;
+        if (this.aliasPid.startsWith(this.factoryPid)) {
+            alias = this.aliasPid;
+        } else {
+            alias = this.factoryPid + "." + this.aliasPid;
+        }
         final int pos = this.getResource().getEntityId().indexOf(':');
         if ( this.getResource().getEntityId().substring(pos + 1).equals(alias) ) {
             return null;
