@@ -80,12 +80,12 @@ public class ConfigInstallTask extends AbstractConfigTask {
                     this.getLogger().debug("Configuration " + config.getPid()
                                 + " " + (created ? "created" : "updated")
                                 + " from " + getResource());
-                    this.setFinishedState(ResourceState.INSTALLED, this.getCompositeAliasPid());
                     final Operation op = new Coordinator.Operation(config.getPid(), config.getFactoryPid(), false);
                     Coordinator.SHARED.add(op);
-                } else {
-                    this.setFinishedState(ResourceState.IGNORED, this.getCompositeAliasPid());
                 }
+                // in any case set the state to "INSTALLED" 
+                // (it doesn't matter if the configuration hasn't been updated as it has been in the correct state already)
+                this.setFinishedState(ResourceState.INSTALLED, this.getCompositeAliasPid());
             } catch (Exception e) {
                 this.getLogger().debug("Exception during installation of config " + this.getResource() + " : " + e.getMessage() + ". Retrying later.", e);
             }
