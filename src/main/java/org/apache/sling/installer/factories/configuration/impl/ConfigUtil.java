@@ -54,7 +54,7 @@ abstract class ConfigUtil {
     private static final String ALIAS_KEY = "org.apache.sling.installer.osgi.factoryaliaspid";
 
     /** Configuration properties to ignore when comparing configs */
-    private static final Set<String> IGNORED_PROPERTIES = new HashSet<String>();
+    private static final Set<String> IGNORED_PROPERTIES = new HashSet<>();
     static {
         IGNORED_PROPERTIES.add(Constants.SERVICE_PID);
         IGNORED_PROPERTIES.add(CONFIG_PATH_KEY);
@@ -63,7 +63,7 @@ abstract class ConfigUtil {
     }
 
     private static Set<String> collectKeys(final Dictionary<String, Object>a) {
-        final Set<String> keys = new HashSet<String>();
+        final Set<String> keys = new HashSet<>();
         final Enumeration<String> aI = a.keys();
         while (aI.hasMoreElements() ) {
             final String key = aI.nextElement();
@@ -129,7 +129,7 @@ abstract class ConfigUtil {
      * Remove all ignored properties
      */
     public static Dictionary<String, Object> cleanConfiguration(final Dictionary<String, Object> config) {
-        final Dictionary<String, Object> cleanedConfig = new Hashtable<String, Object>();
+        final Dictionary<String, Object> cleanedConfig = new Hashtable<>();
         final Enumeration<String> e = config.keys();
         while(e.hasMoreElements()) {
             final String key = e.nextElement();
@@ -153,22 +153,22 @@ abstract class ConfigUtil {
 
     public static Configuration getConfiguration(final ConfigurationAdmin ca,
             final String factoryPid,
-            final String configPid)
+            final String configPidOrName)
     throws IOException, InvalidSyntaxException {
-        return getOrCreateConfiguration(ca, factoryPid, configPid, null, false);
+        return getOrCreateConfiguration(ca, factoryPid, configPidOrName, null, false);
     }
 
     public static Configuration createConfiguration(final ConfigurationAdmin ca,
             final String factoryPid,
-            final String configPid,
+            final String configPidOrName,
             final String location)
     throws IOException, InvalidSyntaxException {
-        return getOrCreateConfiguration(ca, factoryPid, configPid, location, true);
+        return getOrCreateConfiguration(ca, factoryPid, configPidOrName, location, true);
     }
 
     private static Configuration getOrCreateConfiguration(final ConfigurationAdmin ca,
             final String factoryPid,
-            final String configPid,
+            final String configPidOrName,
             final String location,
             final boolean createIfNeeded)
     throws IOException, InvalidSyntaxException {
@@ -176,9 +176,9 @@ abstract class ConfigUtil {
 
         if (factoryPid == null) {
             if (createIfNeeded) {
-                result = ca.getConfiguration(configPid, location);
+                result = ca.getConfiguration(configPidOrName, location);
             } else {
-                String filter = "(" + Constants.SERVICE_PID + "=" + encode(configPid)
+                final String filter = "(" + Constants.SERVICE_PID + "=" + encode(configPidOrName)
                         + ")";
                 Configuration[] configs = ca.listConfigurations(filter);
                 if (configs != null && configs.length > 0) {
@@ -186,35 +186,18 @@ abstract class ConfigUtil {
                 }
             }
         } else {
-            Configuration configs[] = null;
-            if ( configPid != null ) {
-                configs = ca.listConfigurations("(&("
-                        + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
-                        + ")(" + Constants.SERVICE_PID + "=" + encode(configPid)
-                        + "))");
-            }
-            if (configs == null || configs.length == 0) {
-                configs = ca.listConfigurations("(&("
-                        + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
-                        + ")(" + Constants.SERVICE_PID + "=" + encode(factoryPid + "." + configPid)
-                        + "))");
-            }
-            if (configs == null || configs.length == 0) {
-                // check for old style with alias pid
-                configs = ca.listConfigurations(
-                        "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID
-                        + "=" + factoryPid + ")(" + ALIAS_KEY + "=" + encode(configPid)
-                        + "))");
-
-                if (configs == null || configs.length == 0) {
-                    if (createIfNeeded) {
-                        result = ca.createFactoryConfiguration(factoryPid, location);
-                    }
-                } else {
+            if (createIfNeeded) {
+                result = ca.getFactoryConfiguration(factoryPid, configPidOrName, location);
+            } else {
+                final String filter = "(&("
+                       + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
+                       + ")("
+                       + Constants.SERVICE_PID + "=" + encode(ConfigUtil.getPIDOfFactoryPID(factoryPid, configPidOrName))
+                       + "))";
+                Configuration[] configs = ca.listConfigurations(filter);
+                if (configs != null && configs.length > 0) {
                     result = configs[0];
                 }
-            } else {
-                result = configs[0];
             }
         }
 
@@ -231,5 +214,9 @@ abstract class ConfigUtil {
             }
         }
         return result;
+    }
+
+    public static String getPIDOfFactoryPID(final String factoryPID, final String name) {
+        return factoryPID.concat("~").concat(name);
     }
 }

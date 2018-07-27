@@ -39,7 +39,7 @@ public class ConfigInstallTask extends AbstractConfigTask {
 
     @Override
     public String getSortKey() {
-        return CONFIG_INSTALL_ORDER + getCompositePid();
+        return CONFIG_INSTALL_ORDER + getRealPID();
     }
 
 	@Override
@@ -56,11 +56,11 @@ public class ConfigInstallTask extends AbstractConfigTask {
                     location = null;
                 }
 
-                Configuration config = getConfiguration();
+                Configuration config = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
                 if (config == null) {
-                    created = true;
 
-                    config = createConfiguration(location);
+                    config = ConfigUtil.createConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid, location);
+                    created = true;
                 } else {
         			if (ConfigUtil.isSameData(config.getProperties(), getResource().getDictionary())) {
         			    this.getLogger().debug("Configuration {} already installed with same data, update request ignored: {}",
@@ -74,18 +74,15 @@ public class ConfigInstallTask extends AbstractConfigTask {
                 if (config != null) {
                     config.update(getDictionary());
                     ctx.log("Installed configuration {} from resource {}", config.getPid(), getResource());
-                    if ( this.factoryPid != null ) {
-                        this.aliasPid = config.getPid();
-                    }
                     this.getLogger().debug("Configuration " + config.getPid()
                                 + " " + (created ? "created" : "updated")
                                 + " from " + getResource());
                     final Operation op = new Coordinator.Operation(config.getPid(), config.getFactoryPid(), false);
                     Coordinator.SHARED.add(op);
                 }
-                // in any case set the state to "INSTALLED" 
+                // in any case set the state to "INSTALLED"
                 // (it doesn't matter if the configuration hasn't been updated as it has been in the correct state already)
-                this.setFinishedState(ResourceState.INSTALLED, this.getCompositeAliasPid());
+                this.setFinishedState(ResourceState.INSTALLED);
             } catch (Exception e) {
                 this.getLogger().debug("Exception during installation of config " + this.getResource() + " : " + e.getMessage() + ". Retrying later.", e);
             }

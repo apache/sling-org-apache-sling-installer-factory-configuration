@@ -18,6 +18,10 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -27,16 +31,11 @@ import org.mockito.Mockito;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-
 public class ConfigUtilTest {
 
     @Test public void testIsSameDataEmptyAndNullDictionaries() throws Exception {
-        final Dictionary<String, Object> a = new Hashtable<String, Object>();
-        final Dictionary<String, Object> b = new Hashtable<String, Object>();
+        final Dictionary<String, Object> a = new Hashtable<>();
+        final Dictionary<String, Object> b = new Hashtable<>();
 
         assertTrue(ConfigUtil.isSameData(a, b));
         assertTrue(ConfigUtil.isSameData(b, a));
@@ -46,8 +45,8 @@ public class ConfigUtilTest {
     }
 
     @Test public void testIsSameDataSameDictionaries() throws Exception {
-        final Dictionary<String, Object> a = new Hashtable<String, Object>();
-        final Dictionary<String, Object> b = new Hashtable<String, Object>();
+        final Dictionary<String, Object> a = new Hashtable<>();
+        final Dictionary<String, Object> b = new Hashtable<>();
 
         a.put("a", "value");
         a.put("b", 1);
@@ -75,8 +74,8 @@ public class ConfigUtilTest {
     }
 
     @Test public void testIsSameDataArrays() throws Exception {
-        final Dictionary<String, Object> a = new Hashtable<String, Object>();
-        final Dictionary<String, Object> b = new Hashtable<String, Object>();
+        final Dictionary<String, Object> a = new Hashtable<>();
+        final Dictionary<String, Object> b = new Hashtable<>();
 
         a.put("a", new String[] {"1", "2", "3"});
         b.put("a", a.get("a"));
@@ -95,8 +94,8 @@ public class ConfigUtilTest {
     }
 
     @Test public void testIsSameDataWithPrimitiveArrays() throws Exception {
-        final Dictionary<String, Object> a = new Hashtable<String, Object>();
-        final Dictionary<String, Object> b = new Hashtable<String, Object>();
+        final Dictionary<String, Object> a = new Hashtable<>();
+        final Dictionary<String, Object> b = new Hashtable<>();
 
         a.put("b", new int[] {1,2,3});
         b.put("b", a.get("b"));
@@ -113,39 +112,9 @@ public class ConfigUtilTest {
 
     @Test public void testGetOrCreateConfiguration() throws Exception {
         Configuration c1 = Mockito.mock(Configuration.class);
-        Configuration c2 = Mockito.mock(Configuration.class);
         ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
         Mockito.when(cm.listConfigurations(
-                "(&(service.factoryPid=a.b.c)(service.pid=c1))"))
-                .thenReturn(new Configuration[] {c1});
-        Mockito.when(cm.listConfigurations(
-                "(&(service.factoryPid=a.b.c)(service.pid=a.b.c.c1))"))
-                .thenReturn(new Configuration[] {c2});
-        Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
-        assertSame(c1, cfg);
-    }
-
-    @Test public void testGetOrCreateConfigurationFactoryPrefix() throws Exception {
-        Configuration c1 = Mockito.mock(Configuration.class);
-        Configuration c2 = Mockito.mock(Configuration.class);
-        ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
-        Mockito.when(cm.listConfigurations(
-                "(&(service.factoryPid=a.b.c)(service.pid=a.b.c.c1))"))
-                .thenReturn(new Configuration[] {c1});
-        Mockito.when(cm.listConfigurations(
-                "(&(service.factoryPid=a.b.c)(org.apache.sling.installer.osgi.factoryaliaspid=c1))"))
-                .thenReturn(new Configuration[] {c2});
-        Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
-        assertSame(c1, cfg);
-
-        assertNull(ConfigUtil.getConfiguration(cm, "a.b.c", "c2"));
-    }
-
-    @Test public void testGetOrCreateConfigurationAliasKey() throws Exception {
-        Configuration c1 = Mockito.mock(Configuration.class);
-        ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
-        Mockito.when(cm.listConfigurations(
-                "(&(service.factoryPid=a.b.c)(org.apache.sling.installer.osgi.factoryaliaspid=c1))"))
+                "(&(service.factoryPid=a.b.c)(service.pid=a.b.c~c1))"))
                 .thenReturn(new Configuration[] {c1});
         Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
         assertSame(c1, cfg);

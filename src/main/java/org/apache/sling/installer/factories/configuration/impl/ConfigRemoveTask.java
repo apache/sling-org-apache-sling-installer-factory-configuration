@@ -36,7 +36,7 @@ public class ConfigRemoveTask extends AbstractConfigTask {
 
     @Override
     public String getSortKey() {
-        return CONFIG_REMOVE_ORDER + getCompositePid();
+        return CONFIG_REMOVE_ORDER + this.getRealPID();
     }
 
     /**
@@ -46,18 +46,18 @@ public class ConfigRemoveTask extends AbstractConfigTask {
     public void execute(final InstallationContext ctx) {
         synchronized ( Coordinator.SHARED ) {
             try {
-                final Configuration cfg = getConfiguration();
+                final Configuration cfg = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
                 if (cfg == null) {
-                    this.getLogger().debug("Cannot delete config , pid={} not found, ignored ({})", getCompositePid(), getResource());
+                    this.getLogger().debug("Cannot delete config , pid={} not found, ignored ({})", getRealPID(), getResource());
                 } else {
                     if ( !ConfigUtil.isSameData(cfg.getProperties(), this.getResource().getDictionary()) ) {
                         this.getLogger().debug("Configuration has changed after it has been installed!");
                     } else {
                         final Coordinator.Operation op = new Coordinator.Operation(cfg.getPid(), cfg.getFactoryPid(), true);
 
-                        this.getLogger().debug("Deleting config {} ({})", getCompositePid(), getResource());
+                        this.getLogger().debug("Deleting config {} ({})", getRealPID(), getResource());
                         cfg.delete();
-                        ctx.log("Deleted configuration {} from resource {}", getCompositePid(), getResource());
+                        ctx.log("Deleted configuration {} from resource {}", getRealPID(), getResource());
 
                         Coordinator.SHARED.add(op);
                     }

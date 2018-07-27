@@ -98,43 +98,30 @@ public class ConfigTaskCreator
     @Override
     public void configurationEvent(final ConfigurationEvent event) {
         synchronized ( Coordinator.SHARED ) {
-            final String id;
-            final String pid;
-            if (event.getFactoryPid() == null ) {
-                id = event.getPid();
-                pid = id;
-            } else {
-                pid = (event.getPid().startsWith(event.getFactoryPid() + '.') ?
-                        event.getPid().substring(event.getFactoryPid().length() + 1) : event.getPid());
-                id = event.getFactoryPid() + '.' + pid;
-            }
             if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
                 if ( op == null ) {
-                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, id);
+                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, event.getPid());
                 } else {
                     this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
                 }
             } else if ( event.getType() == ConfigurationEvent.CM_UPDATED ) {
                 try {
+                    // we just need to pass in the pid as we're using named factory configs
                     final Configuration config = ConfigUtil.getConfiguration(configAdmin,
-                            event.getFactoryPid(),
+                            null,
                             event.getPid());
                     final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), false);
                     if ( config != null && op == null ) {
                         final boolean persist = ConfigUtil.toBoolean(config.getProperties().get(ConfigurationConstants.PROPERTY_PERSISTENCE), true);
 
                         final Dictionary<String, Object> dict = ConfigUtil.cleanConfiguration(config.getProperties());
-                        final Map<String, Object> attrs = new HashMap<String, Object>();
+                        final Map<String, Object> attrs = new HashMap<>();
                         if ( !persist ) {
                             attrs.put(ResourceChangeListener.RESOURCE_PERSIST, Boolean.FALSE);
                         }
                         attrs.put(Constants.SERVICE_PID, event.getPid());
-                        if ( event.getFactoryPid() == null ) {
-                            attrs.put(InstallableResource.RESOURCE_URI_HINT, pid);
-                        } else {
-                            attrs.put(InstallableResource.RESOURCE_URI_HINT, event.getFactoryPid() + '-' + pid);
-                        }
+                        attrs.put(InstallableResource.RESOURCE_URI_HINT, event.getPid());
                         if ( config.getBundleLocation() != null ) {
                             attrs.put(InstallableResource.INSTALLATION_HINT, config.getBundleLocation());
                         }
@@ -142,7 +129,7 @@ public class ConfigTaskCreator
                         if (event.getFactoryPid() != null) {
                             attrs.put(ConfigurationAdmin.SERVICE_FACTORYPID, event.getFactoryPid());
                         }
-                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, id, null, dict, attrs);
+                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
                         this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
@@ -187,27 +174,22 @@ public class ConfigTaskCreator
         }
 
         // split pid and factory pid alias
+        final Map<String, Object> attr = new HashMap<>();
         final String factoryPid;
         final String configPid;
         int n = pid.indexOf('-');
         if (n > 0) {
             configPid = pid.substring(n + 1);
             factoryPid = pid.substring(0, n);
+            attr.put(ConfigurationAdmin.SERVICE_FACTORYPID, factoryPid);
         } else {
             factoryPid = null;
             configPid = pid;
         }
-
-        final Map<String, Object> attr = new HashMap<String, Object>();
-
         attr.put(Constants.SERVICE_PID, configPid);
-        // Factory?
-        if (factoryPid != null) {
-            attr.put(ConfigurationAdmin.SERVICE_FACTORYPID, factoryPid);
-        }
 
         final TransformationResult tr = new TransformationResult();
-        final String id = (factoryPid == null ? "" : factoryPid + ".") + configPid;
+        final String id = (factoryPid == null ? configPid : ConfigUtil.getPIDOfFactoryPID(factoryPid, configPid));
         tr.setId(id);
         tr.setResourceType(InstallableResource.TYPE_CONFIG);
         tr.setAttributes(attr);
