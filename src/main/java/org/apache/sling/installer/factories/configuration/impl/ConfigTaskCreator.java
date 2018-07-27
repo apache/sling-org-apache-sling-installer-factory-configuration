@@ -200,12 +200,12 @@ public class ConfigTaskCreator
     /**
      * Compute the extension
      */
-    private static String getExtension(String url) {
+    private static String getExtension(final String url) {
         final int pos = url.lastIndexOf('.');
         return (pos < 0 ? "" : url.substring(pos+1));
     }
 
-    private static boolean isConfigExtension(String extension) {
+    private static boolean isConfigExtension(final String extension) {
         if ( extension.equals("cfg")
                 || extension.equals("config")
                 || extension.equals("xml")
@@ -221,7 +221,7 @@ public class ConfigTaskCreator
      * @param path  the path to be changed, null ignored
      * @return the updated path
      */
-    private static String separatorsToUnix(String path) {
+    private static String separatorsToUnix(final String path) {
         if (path == null || path.indexOf('\\') == -1) {
             return path;
         }

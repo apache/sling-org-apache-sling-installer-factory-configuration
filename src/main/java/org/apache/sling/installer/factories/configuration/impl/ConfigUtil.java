@@ -216,6 +216,12 @@ abstract class ConfigUtil {
         return result;
     }
 
+    /**
+     * Get the PID for a factory PID by using the R7 format
+     * @param factoryPID The factory pid
+     * @param name The name
+     * @return The PID
+     */
     public static String getPIDOfFactoryPID(final String factoryPID, final String name) {
         return factoryPID.concat("~").concat(name);
     }
