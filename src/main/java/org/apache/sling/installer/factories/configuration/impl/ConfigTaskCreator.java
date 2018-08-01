@@ -158,10 +158,16 @@ public class ConfigTaskCreator
      */
     private TransformationResult[] checkConfiguration(final RegisteredResource resource) {
         final String url = separatorsToUnix(resource.getURL());
-        String lastIdPart = url;
-        final int pos = lastIdPart.lastIndexOf('/');
+        int pos = url.lastIndexOf('/');
+        if ( pos == -1 ) {
+            pos = url.indexOf(':');
+        }
+
+        final String lastIdPart;
         if ( pos != -1 ) {
-            lastIdPart = lastIdPart.substring(pos + 1);
+            lastIdPart = url.substring(pos + 1);
+        } else {
+            lastIdPart = url;
         }
 
         final String pid;

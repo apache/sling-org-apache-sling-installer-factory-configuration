@@ -204,6 +204,41 @@ abstract class ConfigUtil {
         return result;
     }
 
+    public static Configuration getLegacyFactoryConfig(final ConfigurationAdmin ca,
+            final String factoryPid,
+            final String configPid)
+    throws IOException, InvalidSyntaxException {
+        Configuration result = null;
+
+        Configuration configs[] = null;
+        if ( configPid != null ) {
+            configs = ca.listConfigurations("(&("
+                    + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
+                    + ")(" + Constants.SERVICE_PID + "=" + encode(configPid)
+                    + "))");
+        }
+        if (configs == null || configs.length == 0) {
+            configs = ca.listConfigurations("(&("
+                    + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
+                    + ")(" + Constants.SERVICE_PID + "=" + encode(factoryPid + "." + configPid)
+                    + "))");
+        }
+        if (configs == null || configs.length == 0) {
+            // check for old style with alias pid
+            configs = ca.listConfigurations(
+                    "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID
+                    + "=" + factoryPid + ")(" + ALIAS_KEY + "=" + encode(configPid)
+                    + "))");
+
+            if (configs != null && configs.length > 0) {
+                result = configs[0];
+            }
+        } else {
+            result = configs[0];
+        }
+        return result;
+    }
+
     public static boolean toBoolean(final Object obj, final boolean defaultValue) {
         boolean result = defaultValue;
         if ( obj != null ) {
