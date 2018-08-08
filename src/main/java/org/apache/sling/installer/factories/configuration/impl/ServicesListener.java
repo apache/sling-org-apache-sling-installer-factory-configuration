@@ -20,7 +20,10 @@ package org.apache.sling.installer.factories.configuration.impl;
 
 import java.util.Hashtable;
 
+import org.apache.sling.installer.api.OsgiInstaller;
 import org.apache.sling.installer.api.ResourceChangeListener;
+import org.apache.sling.installer.api.event.InstallationListener;
+import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.tasks.InstallTaskFactory;
 import org.apache.sling.installer.api.tasks.ResourceTransformer;
 import org.osgi.framework.BundleContext;
@@ -46,6 +49,12 @@ public class ServicesListener {
     /** The bundle context. */
     private final BundleContext bundleContext;
 
+    /** The listener for the installer. */
+    private final Listener installerListener;
+
+    /** The listener for the info service */
+    private final Listener infoServiceListener;
+
     /** The listener for the change list handler. */
     private final Listener changeHandlerListener;
 
@@ -59,31 +68,39 @@ public class ServicesListener {
 
     public ServicesListener(final BundleContext bundleContext) {
         this.bundleContext = bundleContext;
+        this.installerListener = new Listener(OsgiInstaller.class.getName());
+        this.infoServiceListener = new Listener(InfoProvider.class.getName());
         this.changeHandlerListener = new Listener(ResourceChangeListener.class.getName());
         this.configAdminListener = new Listener(ConfigurationAdmin.class.getName());
         this.changeHandlerListener.start();
         this.configAdminListener.start();
+        this.installerListener.start();
+        this.infoServiceListener.start();
     }
 
     public synchronized void notifyChange() {
         // check if all services are available
         final ResourceChangeListener listener = (ResourceChangeListener)this.changeHandlerListener.getService();
         final ConfigurationAdmin configAdmin = (ConfigurationAdmin)this.configAdminListener.getService();
+        final OsgiInstaller installer = (OsgiInstaller)this.installerListener.getService();
+        final InfoProvider infoProvider = (InfoProvider)this.infoServiceListener.getService();
 
-        if ( configAdmin != null && listener != null ) {
+        if ( configAdmin != null && listener != null && installer != null && infoProvider != null ) {
             if ( configTaskCreator == null ) {
-                final Hashtable<String, String> props = new Hashtable<String, String>();
+                final Hashtable<String, String> props = new Hashtable<>();
                 props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Configuration Install Task Factory");
                 props.put(Constants.SERVICE_VENDOR, VENDOR);
                 props.put(InstallTaskFactory.NAME, "org.osgi.service.cm");
                 props.put(ResourceTransformer.NAME, "org.osgi.service.cm");
 
-                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin);
+                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, installer, infoProvider);
                 // start and register osgi installer service
                 final String [] serviceInterfaces = {
                         InstallTaskFactory.class.getName(),
                         ConfigurationListener.class.getName(),
-                        ResourceTransformer.class.getName()
+                        ResourceTransformer.class.getName(),
+                        InstallationListener.class.getName()
+
                 };
                 configTaskCreatorRegistration = this.bundleContext.registerService(serviceInterfaces, configTaskCreator, props);
             }
@@ -107,6 +124,8 @@ public class ServicesListener {
     public void deactivate() {
         this.changeHandlerListener.deactivate();
         this.configAdminListener.deactivate();
+        this.infoServiceListener.deactivate();
+        this.installerListener.deactivate();
         this.stop();
     }
 

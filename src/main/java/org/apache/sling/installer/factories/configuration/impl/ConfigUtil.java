@@ -180,7 +180,7 @@ abstract class ConfigUtil {
             } else {
                 final String filter = "(" + Constants.SERVICE_PID + "=" + encode(configPidOrName)
                         + ")";
-                Configuration[] configs = ca.listConfigurations(filter);
+                final Configuration[] configs = ca.listConfigurations(filter);
                 if (configs != null && configs.length > 0) {
                     result = configs[0];
                 }
@@ -194,7 +194,7 @@ abstract class ConfigUtil {
                        + ")("
                        + Constants.SERVICE_PID + "=" + encode(ConfigUtil.getPIDOfFactoryPID(factoryPid, configPidOrName))
                        + "))";
-                Configuration[] configs = ca.listConfigurations(filter);
+                final Configuration[] configs = ca.listConfigurations(filter);
                 if (configs != null && configs.length > 0) {
                     result = configs[0];
                 }
@@ -206,8 +206,11 @@ abstract class ConfigUtil {
 
     public static Configuration getLegacyFactoryConfig(final ConfigurationAdmin ca,
             final String factoryPid,
-            final String configPid)
+            final String aliasPid,
+            final String pid)
     throws IOException, InvalidSyntaxException {
+        final String configPid = (aliasPid != null ? aliasPid.substring(factoryPid.length() + 1) : pid);
+
         Configuration result = null;
 
         Configuration configs[] = null;

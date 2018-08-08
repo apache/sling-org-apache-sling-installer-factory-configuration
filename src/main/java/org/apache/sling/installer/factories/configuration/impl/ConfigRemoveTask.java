@@ -49,13 +49,7 @@ public class ConfigRemoveTask extends AbstractConfigTask {
                 Configuration cfg = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
                 if ( cfg == null && this.factoryPid != null ) {
                     // try support for legacy factory config handling
-                    final String aliasPid;
-                    if ( this.getResourceGroup().getAlias() != null ) {
-                        aliasPid = this.getResourceGroup().getAlias().substring(this.factoryPid.length() + 1);
-                    } else {
-                        aliasPid = null;
-                    }
-                    cfg = ConfigUtil.getLegacyFactoryConfig(this.getConfigurationAdmin(), this.factoryPid, (this.factoryPid != null && aliasPid != null ? aliasPid : this.configPid));
+                    cfg = ConfigUtil.getLegacyFactoryConfig(this.getConfigurationAdmin(), this.factoryPid, this.getResourceGroup().getAlias(), this.configPid);
 
                 }
                 if (cfg == null) {
