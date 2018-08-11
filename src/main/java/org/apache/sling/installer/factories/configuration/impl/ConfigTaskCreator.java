@@ -18,6 +18,7 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
@@ -276,20 +277,17 @@ public class ConfigTaskCreator
     private TransformationResult[] checkConfiguration(final RegisteredResource resource) {
         final String lastIdPart = getResourceId(resource.getURL());
 
-        final String pid;
         // remove extension if known
-        if ( isConfigExtension(getExtension(lastIdPart)) ) {
-            final int lastDot = lastIdPart.lastIndexOf('.');
-            pid = lastIdPart.substring(0, lastDot);
-        } else {
-            pid = lastIdPart;
-        }
+        final String pid = removeConfigExtension(lastIdPart);
 
         // split pid and factory pid alias
         final Map<String, Object> attr = new HashMap<>();
         final String factoryPid;
         final String configPid;
-        int n = pid.indexOf('-');
+        int n = pid.indexOf('~');
+        if ( n == -1 ) {
+            n = pid.indexOf('-');
+        }
         if (n > 0) {
             configPid = pid.substring(n + 1);
             factoryPid = pid.substring(0, n);
@@ -340,22 +338,14 @@ public class ConfigTaskCreator
         this.latch = null;
     }
 
-    /**
-     * Compute the extension
-     */
-    private static String getExtension(final String url) {
-        final int pos = url.lastIndexOf('.');
-        return (pos < 0 ? "" : url.substring(pos+1));
-    }
-
-    private static boolean isConfigExtension(final String extension) {
-        if ( extension.equals("cfg")
-                || extension.equals("config")
-                || extension.equals("xml")
-                || extension.equals("properties")) {
-            return true;
+    private static final List<String> EXTENSIONS = Arrays.asList(".config", ".properties", ".cfg", ".cfg.json");
+    private static String removeConfigExtension(final String id) {
+        for(final String ext : EXTENSIONS) {
+            if ( id.endsWith(ext) ) {
+                return id.substring(0, id.length() - ext.length());
+            }
         }
-        return false;
+        return id;
     }
 
     /**
