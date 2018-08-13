@@ -18,14 +18,9 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.sling.installer.api.OsgiInstaller;
 import org.apache.sling.installer.api.ResourceChangeListener;
-import org.apache.sling.installer.api.event.InstallationListener;
-import org.apache.sling.installer.api.info.InfoProvider;
-import org.apache.sling.installer.api.tasks.InstallTaskFactory;
-import org.apache.sling.installer.api.tasks.ResourceTransformer;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
@@ -34,7 +29,6 @@ import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.cm.ConfigurationListener;
 
 /**
  * The <code>ServicesListener</code> listens for the required services
@@ -49,12 +43,6 @@ public class ServicesListener {
     /** The bundle context. */
     private final BundleContext bundleContext;
 
-    /** The listener for the installer. */
-    private final Listener installerListener;
-
-    /** The listener for the info service */
-    private final Listener infoServiceListener;
-
     /** The listener for the change list handler. */
     private final Listener changeHandlerListener;
 
@@ -62,54 +50,40 @@ public class ServicesListener {
     private final Listener configAdminListener;
 
     /** Registration the service. */
-    private ServiceRegistration<?> configTaskCreatorRegistration;
+    private volatile ServiceRegistration<?> configTaskCreatorRegistration;
 
-    private ConfigTaskCreator configTaskCreator;
+    private volatile ConfigTaskCreator configTaskCreator;
+
+    private final AtomicBoolean active = new AtomicBoolean(false);
 
     public ServicesListener(final BundleContext bundleContext) {
         this.bundleContext = bundleContext;
-        this.installerListener = new Listener(OsgiInstaller.class.getName());
-        this.infoServiceListener = new Listener(InfoProvider.class.getName());
         this.changeHandlerListener = new Listener(ResourceChangeListener.class.getName());
         this.configAdminListener = new Listener(ConfigurationAdmin.class.getName());
         this.changeHandlerListener.start();
         this.configAdminListener.start();
-        this.installerListener.start();
-        this.infoServiceListener.start();
     }
 
     public synchronized void notifyChange() {
         // check if all services are available
         final ResourceChangeListener listener = (ResourceChangeListener)this.changeHandlerListener.getService();
         final ConfigurationAdmin configAdmin = (ConfigurationAdmin)this.configAdminListener.getService();
-        final OsgiInstaller installer = (OsgiInstaller)this.installerListener.getService();
-        final InfoProvider infoProvider = (InfoProvider)this.infoServiceListener.getService();
 
-        if ( configAdmin != null && listener != null && installer != null && infoProvider != null ) {
+        if ( configAdmin != null && listener != null ) {
             if ( configTaskCreator == null ) {
-                final Hashtable<String, String> props = new Hashtable<>();
-                props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Configuration Install Task Factory");
-                props.put(Constants.SERVICE_VENDOR, VENDOR);
-                props.put(InstallTaskFactory.NAME, "org.osgi.service.cm");
-                props.put(ResourceTransformer.NAME, "org.osgi.service.cm");
-
-                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, installer, infoProvider);
+                active.set(true);
                 // start and register osgi installer service
-                final String [] serviceInterfaces = {
-                        InstallTaskFactory.class.getName(),
-                        ConfigurationListener.class.getName(),
-                        ResourceTransformer.class.getName(),
-                        InstallationListener.class.getName()
-
-                };
-                configTaskCreatorRegistration = this.bundleContext.registerService(serviceInterfaces, configTaskCreator, props);
+                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin);
+                final ConfigUpdateHandler handler = new ConfigUpdateHandler(configAdmin, this);
+                configTaskCreatorRegistration = handler.register(this.bundleContext);
             }
         } else {
             this.stop();
         }
     }
 
-    private void stop() {
+    private synchronized void stop() {
+        active.set(false);
         // unregister
         if ( this.configTaskCreatorRegistration != null ) {
             this.configTaskCreatorRegistration.unregister();
@@ -118,14 +92,23 @@ public class ServicesListener {
         this.configTaskCreator = null;
     }
 
+    public boolean isActive() {
+        return this.active.get();
+    }
+
+    public synchronized void finishedUpdating() {
+        if ( this.isActive() ) {
+            this.configTaskCreatorRegistration.unregister();
+            this.configTaskCreatorRegistration = this.configTaskCreator.register(this.bundleContext);
+        }
+    }
+
     /**
      * Deactivate this listener.
      */
     public void deactivate() {
         this.changeHandlerListener.deactivate();
         this.configAdminListener.deactivate();
-        this.infoServiceListener.deactivate();
-        this.installerListener.deactivate();
         this.stop();
     }
 

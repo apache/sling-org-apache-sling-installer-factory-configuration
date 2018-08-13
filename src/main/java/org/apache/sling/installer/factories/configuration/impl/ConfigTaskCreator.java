@@ -21,19 +21,12 @@ package org.apache.sling.installer.factories.configuration.impl;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.sling.installer.api.InstallableResource;
-import org.apache.sling.installer.api.OsgiInstaller;
 import org.apache.sling.installer.api.ResourceChangeListener;
-import org.apache.sling.installer.api.event.InstallationEvent;
-import org.apache.sling.installer.api.event.InstallationListener;
-import org.apache.sling.installer.api.info.InfoProvider;
-import org.apache.sling.installer.api.info.Resource;
-import org.apache.sling.installer.api.info.ResourceGroup;
 import org.apache.sling.installer.api.tasks.ChangeStateTask;
 import org.apache.sling.installer.api.tasks.InstallTask;
 import org.apache.sling.installer.api.tasks.InstallTaskFactory;
@@ -44,7 +37,9 @@ import org.apache.sling.installer.api.tasks.TaskResource;
 import org.apache.sling.installer.api.tasks.TaskResourceGroup;
 import org.apache.sling.installer.api.tasks.TransformationResult;
 import org.apache.sling.installer.factories.configuration.ConfigurationConstants;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ConfigurationEvent;
@@ -56,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * Task creator for configurations.
  */
 public class ConfigTaskCreator
-    implements InstallTaskFactory, ConfigurationListener, ResourceTransformer, InstallationListener {
+    implements InstallTaskFactory, ConfigurationListener, ResourceTransformer {
 
     /** Logger. */
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -67,20 +62,25 @@ public class ConfigTaskCreator
     /** Resource change listener. */
     private final ResourceChangeListener changeListener;
 
-    /** Resource change listener. */
-    private final OsgiInstaller installer;
-
-    /** Resource change listener. */
-    private final InfoProvider infoProvider;
-
     public ConfigTaskCreator(final ResourceChangeListener listener,
-            final ConfigurationAdmin configAdmin,
-            final OsgiInstaller installer,
-            final InfoProvider infoProvider) {
+            final ConfigurationAdmin configAdmin) {
         this.changeListener = listener;
         this.configAdmin = configAdmin;
-        this.installer = installer;
-        this.infoProvider = infoProvider;
+    }
+
+    public ServiceRegistration<?> register(final BundleContext bundleContext) {
+        final Hashtable<String, String> props = new Hashtable<>();
+        props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Configuration Install Task Factory");
+        props.put(Constants.SERVICE_VENDOR, ServicesListener.VENDOR);
+        props.put(InstallTaskFactory.NAME, "org.osgi.service.cm");
+        props.put(ResourceTransformer.NAME, "org.osgi.service.cm");
+
+        final String [] serviceInterfaces = {
+                InstallTaskFactory.class.getName(),
+                ConfigurationListener.class.getName(),
+                ResourceTransformer.class.getName()
+        };
+        return bundleContext.registerService(serviceInterfaces, this, props);
     }
 
     /**
@@ -118,16 +118,11 @@ public class ConfigTaskCreator
      */
     @Override
     public void configurationEvent(final ConfigurationEvent event) {
-        Configuration updateConfig = null;
-        ResourceGroup updateGroup = null;
         synchronized ( Coordinator.SHARED ) {
             if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
                 if ( op == null ) {
-                    updateGroup = this.convertOldInstallerResource(event);
-                    if ( updateGroup == null ) {
-                        this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, event.getPid());
-                    }
+                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, event.getPid());
                 } else {
                     this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
                 }
@@ -156,12 +151,7 @@ public class ConfigTaskCreator
                             attrs.put(ConfigurationAdmin.SERVICE_FACTORYPID, event.getFactoryPid());
                         }
 
-                        updateGroup = this.convertOldInstallerResource(event);
-                        if ( updateGroup == null ) {
-                            this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
-                        } else {
-                            updateConfig = config;
-                        }
+                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
                         this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
@@ -171,76 +161,6 @@ public class ConfigTaskCreator
                 }
             }
         }
-        if ( updateGroup != null ) {
-            // update installer state from old config to new config
-            // store config dictionary for update
-            final Dictionary<String, Object> dict = updateConfig == null ? null : ConfigUtil.cleanConfiguration(updateConfig.getProperties());
-            try {
-                String name = null;
-                for(final Resource r : updateGroup.getResources()) {
-                    if ( name == null ) {
-                        name = (String)r.getAttribute(Constants.SERVICE_PID);
-                    }
-                    final int pos = r.getURL().indexOf(':');
-                    final String rsrcPath = r.getURL().substring(pos +1);
-
-                    this.startListener(r.getURL(), 2);
-                    final Dictionary<String, Object> newProps = ConfigUtil.cleanConfiguration(r.getDictionary());
-                    newProps.put(this.getClass().getName(), "true");
-                    final InstallableResource ins1 = new InstallableResource(rsrcPath, null, newProps, r.getDigest(), r.getType(), r.getPriority());
-                    this.installer.updateResources(r.getScheme(), new InstallableResource[] {ins1}, null);
-                    this.waitForInstall();
-
-                    this.startListener(r.getURL(), 1);
-                    newProps.remove(this.getClass().getName());
-                    final InstallableResource ins2 = new InstallableResource(rsrcPath, null, newProps, r.getDigest(), r.getType(), r.getPriority());
-                    this.installer.updateResources(r.getScheme(), new InstallableResource[] {ins2}, null);
-                    this.waitForInstall();
-                }
-                if ( updateConfig != null ) {
-                    // then delete old config
-                    final Coordinator.Operation op = new Coordinator.Operation(event.getPid(), event.getFactoryPid(), true);
-                    Coordinator.SHARED.add(op);
-                    updateConfig.delete();
-
-                    // finally re-create new config
-                    final Configuration newConfig = this.configAdmin.getFactoryConfiguration(event.getFactoryPid(), name, null);
-                    newConfig.update(dict);
-                } else {
-                    // delete newly created config
-                    final Configuration newConfig = this.configAdmin.getFactoryConfiguration(event.getFactoryPid(), name, null);
-                    newConfig.delete();
-                }
-            } catch ( final Exception ignore) {
-                logger.error("An error occured while updating factory configuration " + event.getFactoryPid() + "-" + event.getPid(), ignore);
-            }
-        }
-    }
-
-    private ResourceGroup convertOldInstallerResource(final ConfigurationEvent event) {
-        if ( event.getFactoryPid() != null && !event.getPid().contains("~") ) {
-            // check if this configuration is processed by the installer
-            final String id =  event.getFactoryPid() + '.' + (event.getPid().startsWith(event.getFactoryPid() + '.') ?
-                    event.getPid().substring(event.getFactoryPid().length() + 1) : event.getPid());
-            final List<ResourceGroup> groups = this.infoProvider.getInstallationState().getInstalledResources();
-            for(final ResourceGroup grp : groups) {
-                if ( grp.getAlias() != null ) {
-                    final String alias;
-                    if ( grp.getAlias().startsWith(event.getFactoryPid() + ".") ) {
-                        alias = grp.getAlias().substring(event.getFactoryPid().length() + 1);
-                    } else {
-                        alias = grp.getAlias();
-                    }
-                    for(final Resource rsrc : grp.getResources()) {
-                        if ( InstallableResource.TYPE_CONFIG.equals(rsrc.getType()) && id.equals(alias) ) {
-                            // we need to update the installer state
-                            return grp;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
     }
 
     /**
@@ -305,37 +225,6 @@ public class ConfigTaskCreator
         tr.setAttributes(attr);
 
         return new TransformationResult[] {tr};
-    }
-
-    private volatile CountDownLatch latch;
-    private volatile String waitingForUrl;
-
-    @Override
-    public void onEvent(final InstallationEvent event) {
-        if ( waitingForUrl != null ) {
-            if ( event.getType() == InstallationEvent.TYPE.PROCESSED ) {
-                final TaskResource rsrc = (TaskResource) event.getSource();
-                if ( rsrc.getURL().equals(waitingForUrl) ) {
-                    latch.countDown();
-                }
-            }
-        }
-    }
-
-
-    private void startListener(final String url, final int count) {
-        this.latch = new CountDownLatch(count);
-        this.waitingForUrl = url;
-    }
-
-    public void waitForInstall() {
-        try {
-            this.latch.await(50, TimeUnit.SECONDS);
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        this.waitingForUrl = null;
-        this.latch = null;
     }
 
     private static final List<String> EXTENSIONS = Arrays.asList(".config", ".properties", ".cfg", ".cfg.json");

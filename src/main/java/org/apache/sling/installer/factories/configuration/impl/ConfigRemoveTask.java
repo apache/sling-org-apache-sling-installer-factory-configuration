@@ -47,11 +47,6 @@ public class ConfigRemoveTask extends AbstractConfigTask {
         synchronized ( Coordinator.SHARED ) {
             try {
                 Configuration cfg = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
-                if ( cfg == null && this.factoryPid != null ) {
-                    // try support for legacy factory config handling
-                    cfg = ConfigUtil.getLegacyFactoryConfig(this.getConfigurationAdmin(), this.factoryPid, this.getResourceGroup().getAlias(), this.configPid);
-
-                }
                 if (cfg == null) {
                     this.getLogger().debug("Cannot delete config , pid={} not found, ignored ({})", getRealPID(), getResource());
                 } else {
