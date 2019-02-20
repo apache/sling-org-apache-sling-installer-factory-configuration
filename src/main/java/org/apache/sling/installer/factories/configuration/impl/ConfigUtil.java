@@ -166,6 +166,17 @@ abstract class ConfigUtil {
         return getOrCreateConfiguration(ca, factoryPid, configPidOrName, location, true);
     }
 
+    /**
+     * 
+     * @param ca
+     * @param factoryPid
+     * @param configPidOrName
+     * @param location
+     * @param createIfNeeded
+     * @return
+     * @throws IOException - if access to persistent storage fails
+     * @throws InvalidSyntaxException
+     */
     private static Configuration getOrCreateConfiguration(final ConfigurationAdmin ca,
             final String factoryPid,
             final String configPidOrName,
