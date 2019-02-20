@@ -18,6 +18,9 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import java.io.IOException;
+import java.text.MessageFormat;
+
 import org.apache.sling.installer.api.tasks.InstallationContext;
 import org.apache.sling.installer.api.tasks.ResourceState;
 import org.apache.sling.installer.api.tasks.TaskResourceGroup;
@@ -83,8 +86,12 @@ public class ConfigInstallTask extends AbstractConfigTask {
                 // in any case set the state to "INSTALLED"
                 // (it doesn't matter if the configuration hasn't been updated as it has been in the correct state already)
                 this.setFinishedState(ResourceState.INSTALLED);
+            } catch (IOException|IllegalStateException e) {
+                this.getLogger().debug("Temporary exception during installation of config " + this.getResource() + " : " + e.getMessage() + ". Retrying later.", e);
             } catch (Exception e) {
-                this.getLogger().debug("Exception during installation of config " + this.getResource() + " : " + e.getMessage() + ". Retrying later.", e);
+                String message = MessageFormat.format("Exception during installation of config {0} : {1}", this.getResource(), e.getMessage());
+                this.getLogger().error(message, e);
+                this.setFinishedState(ResourceState.IGNORED, null, message);
             }
         }
     }
