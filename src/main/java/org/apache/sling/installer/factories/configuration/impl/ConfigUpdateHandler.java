@@ -83,17 +83,30 @@ public class ConfigUpdateHandler implements ResourceUpdater {
         }
     }
 
+    protected String[] getFactoryPidAndPid(final String alias, final String oldId) {
+        int pos = 0;
+        while ( alias.charAt(pos) == oldId.charAt(pos) ) {
+            pos++;
+        }
+        while (alias.charAt(pos - 1) != '.') {
+            pos--;
+        }
+
+        final String factoryPid = alias.substring(0, pos - 1);
+        final String pid = oldId.substring(factoryPid.length() + 1);
+
+        return new String[] { factoryPid, pid };
+    }
+
     private void updateFactoryConfig(final UpdatableResourceGroup group) {
         final String alias = group.getAlias();
         final String oldId = group.getId();
 
         // change group id
-        int pos = 0;
-        while ( alias.charAt(pos) == oldId.charAt(pos) ) {
-            pos++;
-        }
-        final String factoryPid = alias.substring(0, pos - 1);
-        final String pid = oldId.substring(factoryPid.length() + 1);
+        final String[] result = getFactoryPidAndPid(alias, oldId);
+
+        final String factoryPid = result[0];
+        final String pid = result[1];
 
         final String newId = ConfigUtil.getPIDOfFactoryPID(factoryPid, pid);
         group.setId(newId);
