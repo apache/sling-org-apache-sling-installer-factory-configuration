@@ -77,9 +77,16 @@ public class ConfigUpdateHandler implements ResourceUpdater {
     private void update(final UpdatableResourceGroup group) {
         if ( this.activator.isActive() ) {
             // check if the group handles configurations and has an alias (aka factory config)
-            if ( InstallableResource.TYPE_CONFIG.equals(group.getResourceType()) && ( group.getAlias() != null || group.getId().contains("-") )) {
-                this.logger.debug("Configuration going under updation is : {} with alias : {}", group.getId(), group.getAlias());
-                this.updateFactoryConfig(group);
+            if ( InstallableResource.TYPE_CONFIG.equals(group.getResourceType()) ) {
+                if(group.getAlias() == null && group.getId().contains("~") && group.getId().contains("-")){
+                    // new format config with ~ as separator, cleanup if duplicate old format config exists
+                    this.cleanupDuplicateFactoryConfig(group);
+                } else {
+                    if (group.getAlias() != null || group.getId().contains("-")) {
+                        this.logger.debug("Configuration going under updation is : {} with alias : {}", group.getId(), group.getAlias());
+                        this.updateFactoryConfig(group);
+                    }
+                }
             }
         }
     }
@@ -160,5 +167,23 @@ public class ConfigUpdateHandler implements ResourceUpdater {
             // ignore for now
         }
         group.update();
+    }
+
+    private void cleanupDuplicateFactoryConfig(final UpdatableResourceGroup group) {
+            final String newPid = group.getId();
+            final int indexOfSeparator = newPid.lastIndexOf('~');
+            final String pid = newPid.substring(indexOfSeparator+1);
+            final String factoryPid = newPid.substring(0,indexOfSeparator);
+            try {
+                final Configuration cfg = ConfigUtil.getLegacyFactoryConfig(this.configAdmin, factoryPid, null, pid);
+                if ( cfg != null ) {
+                    this.logger.debug("Duplicate configuration being cleaned up is : {}",cfg.getFactoryPid() + '.' + cfg.getPid());
+                    // delete old factory configuration
+                    cfg.delete();
+                }
+
+        } catch ( final IOException | InvalidSyntaxException io) {
+            // ignore for now
+        }
     }
 }
