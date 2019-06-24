@@ -103,10 +103,10 @@ public class ConfigUpdateHandler implements ResourceUpdater {
             // extract factory id for these cases where alias is not available and factoryId and pid need to be separated from the old id string itself
             //format assumption ::: "factory_pid.factory_pid.pid"
             // split pid with lastIndexOf('.') then remove the duplicate factory_pid part from the remaining string using the middle dot split index
-
-            String factoryIdString = oldId.substring(0,oldId.lastIndexOf('.')+1); // keep it +1 to have last dot intact so that we always have even dots in the string
+            int lastDotIndex = oldId.lastIndexOf('.');
+            String factoryIdString = oldId.substring(0,lastDotIndex+1); // keep it +1 to have last dot intact so that we always have even dots in the string
             factoryPid = oldId.substring(0,getMiddleDotSplitIndex(factoryIdString,'.'));
-            pid = oldId.substring(oldId.lastIndexOf('.')+1,oldId.length());
+            pid = oldId.substring(lastDotIndex+1);
 
         }
 

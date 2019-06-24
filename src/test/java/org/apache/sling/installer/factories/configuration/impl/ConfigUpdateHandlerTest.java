@@ -46,5 +46,11 @@ public class ConfigUpdateHandlerTest {
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.3ba307f5-a5d0-40a4-98b6-8616b7a1d1e8",
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.contentpackages",
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup", "contentpackages");
+
+        // case where alias is null and factoryPid and Pid would be inferred from oldId itself
+        checkFactoryPid(
+                null,
+                "org.apache.sling.commons.log.LogManager.factory.config.org.apache.sling.commons.log.LogManager.factory.config.3a514ecf-2e1d-4903-bf88-d878360e8ff1",
+                "org.apache.sling.commons.log.LogManager.factory.config", "3a514ecf-2e1d-4903-bf88-d878360e8ff1");
     }
 }
