@@ -53,4 +53,11 @@ public class ConfigUpdateHandlerTest {
                 "org.apache.sling.commons.log.LogManager.factory.config.org.apache.sling.commons.log.LogManager.factory.config.3a514ecf-2e1d-4903-bf88-d878360e8ff1",
                 "org.apache.sling.commons.log.LogManager.factory.config", "3a514ecf-2e1d-4903-bf88-d878360e8ff1");
     }
+
+    @Test
+    public void testDuplicateFactoryPID() {
+        checkFactoryPid("a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig.5a61b4ab-c8c9-4e20-ab3d-b8b7ea12dfca",
+                "a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig", "a.b.c.MyFactoryConfig",
+                "5a61b4ab-c8c9-4e20-ab3d-b8b7ea12dfca");
+    }
 }

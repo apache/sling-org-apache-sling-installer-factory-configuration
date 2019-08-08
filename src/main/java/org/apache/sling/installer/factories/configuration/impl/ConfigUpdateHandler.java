@@ -92,26 +92,38 @@ public class ConfigUpdateHandler implements ResourceUpdater {
     }
 
     protected String[] getFactoryPidAndPid(final String alias, final String oldId) {
-        int pos = 0;
         String factoryPid;
         String pid;
-        if(alias != null) {
+        if (alias != null) {
 
-            while (alias.charAt(pos) == oldId.charAt(pos)) {
-                pos++;
-            }
-            while (alias.charAt(pos - 1) != '.') {
-                pos--;
-            }
+            // special case, oldId is prefix of alias
+            if (alias.startsWith(oldId)) {
+                final int lastDotIndex = oldId.length();
+                final String factoryIdString = alias.substring(0, lastDotIndex + 1); // keep it +1 to have last dot
+                                                                                     // intact so that we always have
+                                                                                     // even dots in the string
+                factoryPid = alias.substring(0, getMiddleDotSplitIndex(factoryIdString));
+                pid = alias.substring(lastDotIndex + 1);
 
-            factoryPid = alias.substring(0, pos - 1);
-            pid = oldId.substring(factoryPid.length() + 1);
+            } else {
+                int pos = 0;
+                while (alias.charAt(pos) == oldId.charAt(pos)) {
+                    pos++;
+                }
+                while (alias.charAt(pos - 1) != '.') {
+                    pos--;
+                }
+                factoryPid = alias.substring(0, pos - 1);
+                pid = oldId.substring(factoryPid.length() + 1);
+            }
         } else {
             // extract factory id for these cases where alias is not available and factoryId and pid need to be separated from the old id string itself
             //format assumption ::: "factory_pid.factory_pid.pid"
             // split pid with lastIndexOf('.') then remove the duplicate factory_pid part from the remaining string using the middle dot split index
             final int lastDotIndex = oldId.lastIndexOf('.');
-            String factoryIdString = oldId.substring(0,lastDotIndex+1); // keep it +1 to have last dot intact so that we always have even dots in the string
+            final String factoryIdString = oldId.substring(0, lastDotIndex + 1); // keep it +1 to have last dot intact
+                                                                                 // so that we always have even dots in
+                                                                                 // the string
             factoryPid = oldId.substring(0, getMiddleDotSplitIndex(factoryIdString));
             pid = oldId.substring(lastDotIndex+1);
 
