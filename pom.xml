@@ -20,41 +20,33 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.sling</groupId>
-        <artifactId>sling</artifactId>
-        <version>30</version>
+        <artifactId>sling-bundle-parent</artifactId>
+        <version>36</version>
         <relativePath />
     </parent>
 
     <artifactId>org.apache.sling.installer.factory.configuration</artifactId>
     <version>1.2.5-SNAPSHOT</version>
-    <packaging>bundle</packaging>
 
     <name>Apache Sling Installer Configuration Admin Support</name>
     <description> 
         Provides support for configurations to the Apache Sling OSGi installer
     </description>
 
+    <properties>
+        <sling.java.version>8</sling.java.version>
+        <project.build.outputTimestamp>2020-01-14T08:04:00Z</project.build.outputTimestamp>
+    </properties>
+
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-factory-configuration.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-factory-configuration.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-installer-factory-configuration.git</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-Activator>
-                            org.apache.sling.installer.factories.configuration.impl.Activator
-                        </Bundle-Activator>
-                    </instructions>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -68,6 +60,25 @@
     </build>
 
     <dependencies>
+        <!-- OSGi annotations (OSGi R7) -->
+        <!-- https://osgi.org/javadoc/osgi.annotation/7.0.0/org/osgi/annotation/versioning/package-frame.html -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.annotation.versioning</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- https://osgi.org/javadoc/osgi.annotation/7.0.0/org/osgi/annotation/bundle/package-frame.html -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.annotation.bundle</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- OSGi framework 1.8, Core R6 (https://osgi.org/javadoc/r6/core/org/osgi/framework/package-summary.html) -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.framework</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -79,7 +90,6 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.cm</artifactId>
-            <version>1.6.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
