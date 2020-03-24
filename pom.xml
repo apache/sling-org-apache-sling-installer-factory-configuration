@@ -75,11 +75,6 @@
         </dependency>
         <!-- OSGi framework 1.8, Core R6 (https://osgi.org/javadoc/r6/core/org/osgi/framework/package-summary.html) -->
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.framework</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -106,7 +101,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>2.15.0</version>
+            <version>3.3.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
