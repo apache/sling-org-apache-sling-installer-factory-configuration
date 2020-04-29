@@ -119,4 +119,16 @@ public class ConfigUtilTest {
         Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
         assertSame(c1, cfg);
     }
+    
+
+    @Test public void testIsSameDataWithSwitchFromArrayToSingleValue() throws Exception {
+        final Dictionary<String, Object> a = new Hashtable<>();
+        final Dictionary<String, Object> b = new Hashtable<>();
+
+        a.put("b", new int[] {1,2,3});
+        b.put("b", 1);
+
+        assertFalse(ConfigUtil.isSameData(a, b));
+        assertFalse(ConfigUtil.isSameData(b, a));
+    }
 }
