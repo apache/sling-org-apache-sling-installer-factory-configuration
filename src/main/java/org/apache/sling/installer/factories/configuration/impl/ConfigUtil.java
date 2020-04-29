@@ -98,7 +98,7 @@ abstract class ConfigUtil {
                 for(final String key : keysA ) {
                     final Object valA = a.get(key);
                     final Object valB = b.get(key);
-                    if ( valA.getClass().isArray() ) {
+                    if ( valA.getClass().isArray() && valB.getClass().isArray()) {
                         final Object[] arrA = convertToObjectArray(valA);
                         final Object[] arrB = convertToObjectArray(valB);
 
@@ -112,12 +112,16 @@ abstract class ConfigUtil {
                                 break;
                             }
                         }
-                    } else {
-                        // we always do a string comparison
+                    } else if (!valA.getClass().isArray() && !valB.getClass().isArray()) {
+                        // if no arrays do a string comparison
                         if ( !(String.valueOf(valA).equals(String.valueOf(valB))) ) {
                             result = false;
                             break;
                         }
+                    } else {
+                        // one value is array the other is not!
+                        result = false;
+                        break;
                     }
                 }
             }
