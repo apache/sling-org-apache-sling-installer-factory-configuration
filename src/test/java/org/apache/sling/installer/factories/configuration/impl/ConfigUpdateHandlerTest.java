@@ -52,6 +52,13 @@ public class ConfigUpdateHandlerTest {
                 null,
                 "org.apache.sling.commons.log.LogManager.factory.config.org.apache.sling.commons.log.LogManager.factory.config.3a514ecf-2e1d-4903-bf88-d878360e8ff1",
                 "org.apache.sling.commons.log.LogManager.factory.config", "3a514ecf-2e1d-4903-bf88-d878360e8ff1");
+
+        // case where alias is null and factoryPid and Pid would be inferred from oldId itself
+        checkFactoryPid(
+                null,
+                "org-test-form-servlet",
+                "org-test-form-servlet", "org-test-form-servlet");
+
     }
 
     @Test
