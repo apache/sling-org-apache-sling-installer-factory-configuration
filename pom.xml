@@ -28,7 +28,7 @@
     <artifactId>org.apache.sling.installer.factory.configuration</artifactId>
     <version>1.3.3-SNAPSHOT</version>
 
-    <name>Apache Sling Installer Configuration Admin Support</name>
+    <name>Apache Sling Installer Configuration Factory</name>
     <description> 
         Provides support for configurations to the Apache Sling OSGi installer
     </description>
