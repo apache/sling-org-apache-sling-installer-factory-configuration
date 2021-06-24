@@ -18,8 +18,10 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -27,6 +29,9 @@ import java.util.Map;
 
 import org.apache.sling.installer.api.InstallableResource;
 import org.apache.sling.installer.api.ResourceChangeListener;
+import org.apache.sling.installer.api.info.InfoProvider;
+import org.apache.sling.installer.api.info.Resource;
+import org.apache.sling.installer.api.info.ResourceGroup;
 import org.apache.sling.installer.api.tasks.ChangeStateTask;
 import org.apache.sling.installer.api.tasks.InstallTask;
 import org.apache.sling.installer.api.tasks.InstallTaskFactory;
@@ -62,10 +67,15 @@ public class ConfigTaskCreator
     /** Resource change listener. */
     private final ResourceChangeListener changeListener;
 
+    /** Info Provider */
+    private final InfoProvider infoProvider;
+
     public ConfigTaskCreator(final ResourceChangeListener listener,
-            final ConfigurationAdmin configAdmin) {
+            final ConfigurationAdmin configAdmin,
+            final InfoProvider infoProvider) {
         this.changeListener = listener;
         this.configAdmin = configAdmin;
+        this.infoProvider = infoProvider;
     }
 
     public ServiceRegistration<?> register(final BundleContext bundleContext) {
@@ -80,7 +90,10 @@ public class ConfigTaskCreator
                 ConfigurationListener.class.getName(),
                 ResourceTransformer.class.getName()
         };
-        return bundleContext.registerService(serviceInterfaces, this, props);
+        final ServiceRegistration<?> reg = bundleContext.registerService(serviceInterfaces, this, props);
+        this.logger.info("OSGi Configuration support for OSGi installer active, default location={}, merge schemes={}", 
+                Activator.DEFAULT_LOCATION, Activator.MERGE_SCHEMES);
+        return reg;
     }
 
     /**
@@ -151,6 +164,7 @@ public class ConfigTaskCreator
                             attrs.put(ConfigurationAdmin.SERVICE_FACTORYPID, event.getFactoryPid());
                         }
 
+                        removeDefaultProperties(event.getPid(), dict);
                         this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
@@ -158,6 +172,40 @@ public class ConfigTaskCreator
                     }
                 } catch ( final Exception ignore) {
                     // ignore for now
+                }
+            }
+        }
+    }
+
+    private void removeDefaultProperties(final String pid, final Dictionary<String, Object> dict) {
+        if ( Activator.MERGE_SCHEMES != null ) {
+            final List<Dictionary<String, Object>> propertiesList = new ArrayList<>();
+            final String entityId = InstallableResource.TYPE_CONFIG.concat(":").concat(pid);
+            boolean done = false;
+            for(final ResourceGroup group : this.infoProvider.getInstallationState().getInstalledResources()) {
+                for(final Resource rsrc : group.getResources()) {
+                    if ( rsrc.getEntityId().equals(entityId) ) {
+                        done = true;
+                        if ( Activator.MERGE_SCHEMES.contains(rsrc.getScheme()) ) {
+                            propertiesList.add(rsrc.getDictionary());
+                        }
+                    }
+                }
+                if ( done ) {
+                    break;
+                }
+            }
+            if ( !propertiesList.isEmpty() ) {
+                final Dictionary<String, Object> defaultProps = ConfigUtil.mergeReverseOrder(propertiesList);
+                final Enumeration<String> keyEnum = defaultProps.keys();
+                while ( keyEnum.hasMoreElements() ) {
+                    final String key = keyEnum.nextElement();
+                    final Object value = defaultProps.get(key);
+
+                    final Object newValue = dict.get(key);
+                    if ( newValue != null && ConfigUtil.isSameValue(newValue, value)) {
+                        dict.remove(key);
+                    }
                 }
             }
         }

@@ -18,6 +18,9 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -32,23 +35,30 @@ public class Activator implements BundleActivator {
     /** Property for bundle location default. */
     private static final String PROP_LOCATION_DEFAULT = "sling.installer.config.useMulti";
 
+    /** Property for configuration merge schemes. */
+    private static final String PROP_MERGE_SCHEMES = "sling.installer.config.mergeSchemes";
+
     /** Services listener. */
     private ServicesListener listener;
 
     public static String DEFAULT_LOCATION;
 
+    public static List<String> MERGE_SCHEMES;
+
+
     /**
      * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
      */
     public void start(final BundleContext context) throws Exception {
-        String locationDefault = null;
         if ( context.getProperty(PROP_LOCATION_DEFAULT) != null ) {
             final Boolean bool = Boolean.valueOf(context.getProperty(PROP_LOCATION_DEFAULT).toString());
             if ( bool.booleanValue() ) {
-                locationDefault = "?";
+                DEFAULT_LOCATION = "?";
             }
         }
-        DEFAULT_LOCATION = locationDefault;
+        if ( context.getProperty(PROP_MERGE_SCHEMES) != null ) {
+            MERGE_SCHEMES = Arrays.asList(context.getProperty(PROP_MERGE_SCHEMES).split(","));
+        }
         this.listener = new ServicesListener(context);
     }
 

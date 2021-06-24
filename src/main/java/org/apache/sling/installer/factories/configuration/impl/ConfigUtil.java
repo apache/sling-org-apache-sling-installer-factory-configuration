@@ -20,10 +20,12 @@ package org.apache.sling.installer.factories.configuration.impl;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 
 import org.osgi.framework.Constants;
@@ -98,28 +100,8 @@ abstract class ConfigUtil {
                 for(final String key : keysA ) {
                     final Object valA = a.get(key);
                     final Object valB = b.get(key);
-                    if ( valA.getClass().isArray() && valB.getClass().isArray()) {
-                        final Object[] arrA = convertToObjectArray(valA);
-                        final Object[] arrB = convertToObjectArray(valB);
 
-                        if ( arrA.length != arrB.length ) {
-                            result = false;
-                            break;
-                        }
-                        for(int i=0; i<arrA.length; i++) {
-                            if ( !(String.valueOf(arrA[i]).equals(String.valueOf(arrB[i]))) ) {
-                                result = false;
-                                break;
-                            }
-                        }
-                    } else if (!valA.getClass().isArray() && !valB.getClass().isArray()) {
-                        // if no arrays do a string comparison
-                        if ( !(String.valueOf(valA).equals(String.valueOf(valB))) ) {
-                            result = false;
-                            break;
-                        }
-                    } else {
-                        // one value is array the other is not!
+                    if ( !isSameValue(valA, valB) ) {
                         result = false;
                         break;
                     }
@@ -127,6 +109,31 @@ abstract class ConfigUtil {
             }
         }
         return result;
+    }
+
+    public static boolean isSameValue(final Object valA, final Object valB) {
+        if ( valA.getClass().isArray() && valB.getClass().isArray()) {
+            final Object[] arrA = convertToObjectArray(valA);
+            final Object[] arrB = convertToObjectArray(valB);
+
+            if ( arrA.length != arrB.length ) {
+                return false;
+            }
+            for(int i=0; i<arrA.length; i++) {
+                if ( !(String.valueOf(arrA[i]).equals(String.valueOf(arrB[i]))) ) {
+                    return false;
+                }
+            }
+        } else if (!valA.getClass().isArray() && !valB.getClass().isArray()) {
+            // if no arrays do a string comparison
+            if ( !(String.valueOf(valA).equals(String.valueOf(valB))) ) {
+                return false;
+            }
+        } else {
+            // one value is array the other is not!
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -277,5 +284,32 @@ abstract class ConfigUtil {
      */
     public static String getPIDOfFactoryPID(final String factoryPID, final String name) {
         return factoryPID.concat("~").concat(name);
+    }
+
+    /**
+     * Merge all dictionaries into a single dictionary in reverse order
+     * @param propertiesList The list of dictionaries
+     * @return The merged dictionary
+     */
+    public static Dictionary<String, Object> mergeReverseOrder(final List<Dictionary<String, Object>> propertiesList) {
+        Collections.reverse(propertiesList);
+        final Dictionary<String, Object> properties = new Hashtable<>();
+        for(final Dictionary<String, Object> dict : propertiesList) {
+            merge(properties, dict);
+        }
+        return properties;
+    }
+
+    /**
+     * Merge one dictionary into the other
+     * @param base Base dictionary
+     * @param props Overwriting dictionary
+     */
+    private static void merge(final Dictionary<String, Object> base, final Dictionary<String, Object> props) {
+        final Enumeration<String> keyIter = props.keys();
+        while (keyIter.hasMoreElements() ) {
+            final String key = keyIter.nextElement();
+            base.put(key, props.get(key));
+        }
     }
 }

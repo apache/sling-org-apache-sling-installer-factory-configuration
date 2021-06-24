@@ -21,6 +21,7 @@ package org.apache.sling.installer.factories.configuration.impl;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sling.installer.api.ResourceChangeListener;
+import org.apache.sling.installer.api.info.InfoProvider;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
@@ -49,6 +50,9 @@ public class ServicesListener {
     /** The listener for the configuration admin. */
     private final Listener configAdminListener;
 
+    /** The listener for the installer info service. */
+    private final Listener infoServiceListener;
+
     /** Registration the service. */
     private volatile ServiceRegistration<?> configTaskCreatorRegistration;
 
@@ -60,6 +64,8 @@ public class ServicesListener {
         this.bundleContext = bundleContext;
         this.changeHandlerListener = new Listener(ResourceChangeListener.class.getName());
         this.configAdminListener = new Listener(ConfigurationAdmin.class.getName());
+        this.infoServiceListener = new Listener(InfoProvider.class.getName());
+        this.infoServiceListener.start();
         this.changeHandlerListener.start();
         this.configAdminListener.start();
     }
@@ -68,12 +74,13 @@ public class ServicesListener {
         // check if all services are available
         final ResourceChangeListener listener = (ResourceChangeListener)this.changeHandlerListener.getService();
         final ConfigurationAdmin configAdmin = (ConfigurationAdmin)this.configAdminListener.getService();
+        final InfoProvider infoProvider = (InfoProvider)this.infoServiceListener.getService();
 
-        if ( configAdmin != null && listener != null ) {
+        if ( configAdmin != null && listener != null && infoProvider != null ) {
             if ( configTaskCreator == null ) {
                 active.set(true);
                 // start and register osgi installer service
-                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin);
+                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, infoProvider);
                 final ConfigUpdateHandler handler = new ConfigUpdateHandler(configAdmin, this);
                 configTaskCreatorRegistration = handler.register(this.bundleContext);
             }
@@ -107,6 +114,7 @@ public class ServicesListener {
      * Deactivate this listener.
      */
     public void deactivate() {
+        this.infoServiceListener.deactivate();
         this.changeHandlerListener.deactivate();
         this.configAdminListener.deactivate();
         this.stop();

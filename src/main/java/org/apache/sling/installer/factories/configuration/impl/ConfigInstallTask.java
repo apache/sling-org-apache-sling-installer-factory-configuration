@@ -20,9 +20,17 @@ package org.apache.sling.installer.factories.configuration.impl;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
 
 import org.apache.sling.installer.api.tasks.InstallationContext;
 import org.apache.sling.installer.api.tasks.ResourceState;
+import org.apache.sling.installer.api.tasks.TaskResource;
 import org.apache.sling.installer.api.tasks.TaskResourceGroup;
 import org.apache.sling.installer.factories.configuration.ConfigurationConstants;
 import org.apache.sling.installer.factories.configuration.impl.Coordinator.Operation;
@@ -36,8 +44,8 @@ public class ConfigInstallTask extends AbstractConfigTask {
 
     private static final String CONFIG_INSTALL_ORDER = "20-";
 
-    public ConfigInstallTask(final TaskResourceGroup r, final ConfigurationAdmin configAdmin) {
-        super(r, configAdmin);
+    public ConfigInstallTask(final TaskResourceGroup group, final ConfigurationAdmin configAdmin) {
+        super(group, configAdmin);
     }
 
     @Override
@@ -46,13 +54,40 @@ public class ConfigInstallTask extends AbstractConfigTask {
     }
 
 	@Override
+    protected Dictionary<String, Object> getDictionary() {
+        Dictionary<String, Object> properties = super.getDictionary();
+
+        if ( Activator.MERGE_SCHEMES != null ) {
+            final List<Dictionary<String, Object>> propertiesList = new ArrayList<>();
+            propertiesList.add(properties);
+            final Iterator<TaskResource> iter = this.getResourceGroup().getActiveResourceIterator();
+            if ( iter != null ) {
+                // skip first active resource
+                iter.next();
+                while ( iter.hasNext()) {
+                    final TaskResource rsrc = iter.next();
+                    
+                    if ( Activator.MERGE_SCHEMES.contains(rsrc.getScheme())) {
+                        propertiesList.add(rsrc.getDictionary());
+                    }
+                }
+            }
+            if ( propertiesList.size() > 1 ) {
+                properties = ConfigUtil.mergeReverseOrder(propertiesList);
+            }
+        }
+        return properties;
+    }
+
+    @Override
     public void execute(final InstallationContext ctx) {
         synchronized ( Coordinator.SHARED ) {
             // Get or create configuration, but do not
             // update if the new one has the same values.
+            final Dictionary<String, Object> properties = this.getDictionary();
             boolean created = false;
             try {
-                String location = (String)this.getResource().getDictionary().get(ConfigurationConstants.PROPERTY_BUNDLE_LOCATION);
+                String location = (String)properties.get(ConfigurationConstants.PROPERTY_BUNDLE_LOCATION);
                 if ( location == null ) {
                     location = Activator.DEFAULT_LOCATION; // default
                 } else if ( location.length() == 0 ) {
@@ -65,7 +100,7 @@ public class ConfigInstallTask extends AbstractConfigTask {
                     config = ConfigUtil.createConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid, location);
                     created = true;
                 } else {
-        			if (ConfigUtil.isSameData(config.getProperties(), getResource().getDictionary())) {
+        			if (ConfigUtil.isSameData(config.getProperties(), properties)) {
         			    this.getLogger().debug("Configuration {} already installed with same data, update request ignored: {}",
         	                        config.getPid(), getResource());
         				config = null;
@@ -75,7 +110,7 @@ public class ConfigInstallTask extends AbstractConfigTask {
                 }
 
                 if (config != null) {
-                    config.update(getDictionary());
+                    config.update(properties);
                     ctx.log("Installed configuration {} from resource {}", config.getPid(), getResource());
                     this.getLogger().debug("Configuration " + config.getPid()
                                 + " " + (created ? "created" : "updated")
