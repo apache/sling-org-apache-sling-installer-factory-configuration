@@ -1,0 +1,4 @@
+Import-Package: !org.osgi.service.metatype, \
+  !org.apache.felix.webconsole.spi,*
+DynamicImport-Package: org.osgi.service.metatype, \
+  org.apache.felix.webconsole.spi

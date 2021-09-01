@@ -22,10 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sling.installer.api.ResourceChangeListener;
 import org.apache.sling.installer.api.info.InfoProvider;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -56,6 +58,9 @@ public class ServicesListener {
     /** Registration the service. */
     private volatile ServiceRegistration<?> configTaskCreatorRegistration;
 
+    /** Registration for the webconsole support. */
+    private volatile ServiceRegistration<?> webconsoleRegistration;
+
     private volatile ConfigTaskCreator configTaskCreator;
 
     private final AtomicBoolean active = new AtomicBoolean(false);
@@ -83,6 +88,21 @@ public class ServicesListener {
                 this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, infoProvider);
                 final ConfigUpdateHandler handler = new ConfigUpdateHandler(configAdmin, this);
                 configTaskCreatorRegistration = handler.register(this.bundleContext);
+                if ( Activator.MERGE_SCHEMES != null ) {
+                    this.webconsoleRegistration = this.bundleContext.registerService("org.apache.felix.webconsole.spi.ConfigurationHandler", new ServiceFactory<Object>(){
+
+                        @Override
+                        public Object getService(final Bundle bundle, final ServiceRegistration<Object> registration) {
+                            return new WebconsoleConfigurationHandler(bundleContext, infoProvider);
+                        }
+
+                        @Override
+                        public void ungetService(final Bundle bundle, final ServiceRegistration<Object> registration, final Object service) {
+                            ((WebconsoleConfigurationHandler)service).deactivate();
+                        }
+
+                    }, null);
+                }
             }
         } else {
             this.stop();
@@ -92,6 +112,10 @@ public class ServicesListener {
     private synchronized void stop() {
         active.set(false);
         // unregister
+        if ( this.webconsoleRegistration != null ) {
+            this.webconsoleRegistration.unregister();
+            this.webconsoleRegistration = null;
+        }
         if ( this.configTaskCreatorRegistration != null ) {
             this.configTaskCreatorRegistration.unregister();
             this.configTaskCreatorRegistration = null;

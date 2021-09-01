@@ -164,7 +164,7 @@ public class ConfigTaskCreator
                             attrs.put(ConfigurationAdmin.SERVICE_FACTORYPID, event.getFactoryPid());
                         }
 
-                        removeDefaultProperties(event.getPid(), dict);
+                        removeDefaultProperties(this.infoProvider, event.getPid(), dict);
                         this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
@@ -177,12 +177,12 @@ public class ConfigTaskCreator
         }
     }
 
-    private void removeDefaultProperties(final String pid, final Dictionary<String, Object> dict) {
+    public static Dictionary<String, Object> getDefaultProperties(final InfoProvider infoProvider, final String pid) {
         if ( Activator.MERGE_SCHEMES != null ) {
             final List<Dictionary<String, Object>> propertiesList = new ArrayList<>();
             final String entityId = InstallableResource.TYPE_CONFIG.concat(":").concat(pid);
             boolean done = false;
-            for(final ResourceGroup group : this.infoProvider.getInstallationState().getInstalledResources()) {
+            for(final ResourceGroup group : infoProvider.getInstallationState().getInstalledResources()) {
                 for(final Resource rsrc : group.getResources()) {
                     if ( rsrc.getEntityId().equals(entityId) ) {
                         done = true;
@@ -197,6 +197,16 @@ public class ConfigTaskCreator
             }
             if ( !propertiesList.isEmpty() ) {
                 final Dictionary<String, Object> defaultProps = ConfigUtil.mergeReverseOrder(propertiesList);
+                return defaultProps;
+            }
+        }
+        return null;
+    }
+
+    public static void removeDefaultProperties(final InfoProvider infoProvider, final String pid, final Dictionary<String, Object> dict) {
+        if ( Activator.MERGE_SCHEMES != null ) {
+            final Dictionary<String, Object> defaultProps = getDefaultProperties(infoProvider, pid);
+            if ( defaultProps != null ) {
                 final Enumeration<String> keyEnum = defaultProps.keys();
                 while ( keyEnum.hasMoreElements() ) {
                     final String key = keyEnum.nextElement();
