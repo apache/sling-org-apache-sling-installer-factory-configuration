@@ -94,6 +94,7 @@ public class MetatypeHandlerTest {
 
          final Dictionary<String, Object> props = new Hashtable<>();
          props.put("a", "2");
+         props.put("b", "5"); // property having a value equal to the same named default property
          props.put("c", "3");
          props.put("d", 4);
          props.put("e", 5);
@@ -107,7 +108,7 @@ public class MetatypeHandlerTest {
          handler.updateConfiguration(null, "my.pid", props, defaultProps);
 
          assertEquals(3, props.size());
-         assertEquals("2", props.get("a"));      
+         assertEquals("2", props.get("a"));
          assertEquals(4, props.get("d"));
          assertEquals(Arrays.asList("/a", "/b"), props.get("g"));  
     }
