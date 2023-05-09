@@ -18,10 +18,8 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -29,9 +27,6 @@ import java.util.Map;
 
 import org.apache.sling.installer.api.InstallableResource;
 import org.apache.sling.installer.api.ResourceChangeListener;
-import org.apache.sling.installer.api.info.InfoProvider;
-import org.apache.sling.installer.api.info.Resource;
-import org.apache.sling.installer.api.info.ResourceGroup;
 import org.apache.sling.installer.api.tasks.ChangeStateTask;
 import org.apache.sling.installer.api.tasks.InstallTask;
 import org.apache.sling.installer.api.tasks.InstallTaskFactory;
@@ -42,6 +37,7 @@ import org.apache.sling.installer.api.tasks.TaskResource;
 import org.apache.sling.installer.api.tasks.TaskResourceGroup;
 import org.apache.sling.installer.api.tasks.TransformationResult;
 import org.apache.sling.installer.factories.configuration.ConfigurationConstants;
+import org.apache.sling.installer.factories.configuration.ConfigurationMerger;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
@@ -68,14 +64,14 @@ public class ConfigTaskCreator
     private final ResourceChangeListener changeListener;
 
     /** Info Provider */
-    private final InfoProvider infoProvider;
+    private final ConfigurationMerger configMerger;
 
     public ConfigTaskCreator(final ResourceChangeListener listener,
             final ConfigurationAdmin configAdmin,
-            final InfoProvider infoProvider) {
+            final ConfigurationMerger configMerger) {
         this.changeListener = listener;
         this.configAdmin = configAdmin;
-        this.infoProvider = infoProvider;
+        this.configMerger = configMerger;
     }
 
     public ServiceRegistration<?> register(final BundleContext bundleContext) {
@@ -164,7 +160,7 @@ public class ConfigTaskCreator
                             attrs.put(ConfigurationAdmin.SERVICE_FACTORYPID, event.getFactoryPid());
                         }
 
-                        removeDefaultProperties(this.infoProvider, event.getPid(), dict);
+                        configMerger.removeDefaultProperties(event.getPid(), dict);
                         this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
@@ -172,50 +168,6 @@ public class ConfigTaskCreator
                     }
                 } catch ( final Exception ignore) {
                     // ignore for now
-                }
-            }
-        }
-    }
-
-    public static Dictionary<String, Object> getDefaultProperties(final InfoProvider infoProvider, final String pid) {
-        if ( Activator.MERGE_SCHEMES != null ) {
-            final List<Dictionary<String, Object>> propertiesList = new ArrayList<>();
-            final String entityId = InstallableResource.TYPE_CONFIG.concat(":").concat(pid);
-            boolean done = false;
-            for(final ResourceGroup group : infoProvider.getInstallationState().getInstalledResources()) {
-                for(final Resource rsrc : group.getResources()) {
-                    if ( rsrc.getEntityId().equals(entityId) ) {
-                        done = true;
-                        if ( Activator.MERGE_SCHEMES.contains(rsrc.getScheme()) ) {
-                            propertiesList.add(rsrc.getDictionary());
-                        }
-                    }
-                }
-                if ( done ) {
-                    break;
-                }
-            }
-            if ( !propertiesList.isEmpty() ) {
-                final Dictionary<String, Object> defaultProps = ConfigUtil.mergeReverseOrder(propertiesList);
-                return defaultProps;
-            }
-        }
-        return null;
-    }
-
-    public static void removeDefaultProperties(final InfoProvider infoProvider, final String pid, final Dictionary<String, Object> dict) {
-        if ( Activator.MERGE_SCHEMES != null ) {
-            final Dictionary<String, Object> defaultProps = getDefaultProperties(infoProvider, pid);
-            if ( defaultProps != null ) {
-                final Enumeration<String> keyEnum = defaultProps.keys();
-                while ( keyEnum.hasMoreElements() ) {
-                    final String key = keyEnum.nextElement();
-                    final Object value = defaultProps.get(key);
-
-                    final Object newValue = dict.get(key);
-                    if ( newValue != null && ConfigUtil.isSameValue(newValue, value)) {
-                        dict.remove(key);
-                    }
                 }
             }
         }

@@ -23,7 +23,7 @@ import java.util.Dictionary;
 
 import org.apache.felix.webconsole.spi.ConfigurationHandler;
 import org.apache.felix.webconsole.spi.ValidationException;
-import org.apache.sling.installer.api.info.InfoProvider;
+import org.apache.sling.installer.factories.configuration.ConfigurationMerger;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
 
@@ -31,14 +31,14 @@ public class WebconsoleConfigurationHandler implements ConfigurationHandler {
 
     static final String META_TYPE_NAME = "org.osgi.service.metatype.MetaTypeService"; 
 
-    private final InfoProvider infoProvider;
+    private final ConfigurationMerger configMerger;
 
     private final ServiceTracker<Object, Object> metatypeTracker;
 
     private final BundleContext bundleContext;
 
-    public WebconsoleConfigurationHandler(final BundleContext context, final InfoProvider infoProvider) {
-        this.infoProvider = infoProvider;
+    public WebconsoleConfigurationHandler(final BundleContext context, final ConfigurationMerger configMerger) {
+        this.configMerger = configMerger;
         this.bundleContext = context;
         this.metatypeTracker = new ServiceTracker<>(context, META_TYPE_NAME, null);
         this.metatypeTracker.open();    
@@ -68,7 +68,7 @@ public class WebconsoleConfigurationHandler implements ConfigurationHandler {
             throws ValidationException, IOException {
         final Object mts = this.metatypeTracker.getService();
         if ( mts != null ) {
-            final Dictionary<String, Object> defaultProps = ConfigTaskCreator.getDefaultProperties(infoProvider, pid);
+            final Dictionary<String, Object> defaultProps = configMerger.getDefaultProperties(pid);
             final MetatypeHandler mt = new MetatypeHandler(mts, this.bundleContext);
             mt.updateConfiguration(factoryPid, pid, props, defaultProps);
         }        

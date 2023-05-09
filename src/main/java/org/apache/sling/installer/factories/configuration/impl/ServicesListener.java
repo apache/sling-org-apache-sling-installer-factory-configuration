@@ -21,7 +21,7 @@ package org.apache.sling.installer.factories.configuration.impl;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sling.installer.api.ResourceChangeListener;
-import org.apache.sling.installer.api.info.InfoProvider;
+import org.apache.sling.installer.factories.configuration.ConfigurationMerger;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -53,7 +53,7 @@ public class ServicesListener {
     private final Listener configAdminListener;
 
     /** The listener for the installer info service. */
-    private final Listener infoServiceListener;
+    private final Listener configMergerListener;
 
     /** Registration the service. */
     private volatile ServiceRegistration<?> configTaskCreatorRegistration;
@@ -69,8 +69,8 @@ public class ServicesListener {
         this.bundleContext = bundleContext;
         this.changeHandlerListener = new Listener(ResourceChangeListener.class.getName());
         this.configAdminListener = new Listener(ConfigurationAdmin.class.getName());
-        this.infoServiceListener = new Listener(InfoProvider.class.getName());
-        this.infoServiceListener.start();
+        this.configMergerListener = new Listener(ConfigurationMerger.class.getName());
+        this.configMergerListener.start();
         this.changeHandlerListener.start();
         this.configAdminListener.start();
     }
@@ -79,13 +79,13 @@ public class ServicesListener {
         // check if all services are available
         final ResourceChangeListener listener = (ResourceChangeListener)this.changeHandlerListener.getService();
         final ConfigurationAdmin configAdmin = (ConfigurationAdmin)this.configAdminListener.getService();
-        final InfoProvider infoProvider = (InfoProvider)this.infoServiceListener.getService();
+        final ConfigurationMerger configMerger = (ConfigurationMerger)this.configMergerListener.getService();
 
-        if ( configAdmin != null && listener != null && infoProvider != null ) {
+        if ( configAdmin != null && listener != null && configMerger != null ) {
             if ( configTaskCreator == null ) {
                 active.set(true);
                 // start and register osgi installer service
-                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, infoProvider);
+                this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, configMerger);
                 final ConfigUpdateHandler handler = new ConfigUpdateHandler(configAdmin, this);
                 configTaskCreatorRegistration = handler.register(this.bundleContext);
                 if ( Activator.MERGE_SCHEMES != null ) {
@@ -93,7 +93,7 @@ public class ServicesListener {
 
                         @Override
                         public Object getService(final Bundle bundle, final ServiceRegistration<Object> registration) {
-                            return new WebconsoleConfigurationHandler(bundleContext, infoProvider);
+                            return new WebconsoleConfigurationHandler(bundleContext, configMerger);
                         }
 
                         @Override
@@ -138,7 +138,7 @@ public class ServicesListener {
      * Deactivate this listener.
      */
     public void deactivate() {
-        this.infoServiceListener.deactivate();
+        this.configMergerListener.deactivate();
         this.changeHandlerListener.deactivate();
         this.configAdminListener.deactivate();
         this.stop();
