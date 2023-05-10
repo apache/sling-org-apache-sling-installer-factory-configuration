@@ -35,8 +35,8 @@ public class MetatypeHandler {
 
     private final BundleContext bundleContext;
 
-    public MetatypeHandler(final Object mts, final BundleContext bundleContext) {
-        this.srv = (MetaTypeService)mts;
+    public MetatypeHandler(final MetaTypeService mts, final BundleContext bundleContext) {
+        this.srv = mts;
         this.bundleContext = bundleContext;
     }
     
