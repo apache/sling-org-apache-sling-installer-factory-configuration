@@ -21,7 +21,6 @@ package org.apache.sling.installer.factories.configuration.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -207,16 +206,7 @@ public class ConfigTaskCreator
         if ( Activator.MERGE_SCHEMES != null ) {
             final Dictionary<String, Object> defaultProps = getDefaultProperties(infoProvider, pid);
             if ( defaultProps != null ) {
-                final Enumeration<String> keyEnum = defaultProps.keys();
-                while ( keyEnum.hasMoreElements() ) {
-                    final String key = keyEnum.nextElement();
-                    final Object value = defaultProps.get(key);
-
-                    final Object newValue = dict.get(key);
-                    if ( newValue != null && ConfigUtil.isSameValue(newValue, value)) {
-                        dict.remove(key);
-                    }
-                }
+                ConfigUtil.removeRedundantProperties(dict, defaultProps);
             }
         }
     }

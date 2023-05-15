@@ -72,6 +72,11 @@
             <artifactId>org.osgi.annotation.bundle</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component.annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <!-- OSGi framework 1.8, Core R6 (https://osgi.org/javadoc/r6/core/org/osgi/framework/package-summary.html) -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -81,6 +86,11 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -116,6 +126,11 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.util.function</artifactId>
             <version>1.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

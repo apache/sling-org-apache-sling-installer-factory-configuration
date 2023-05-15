@@ -112,6 +112,12 @@ abstract class ConfigUtil {
     }
 
     public static boolean isSameValue(final Object valA, final Object valB) {
+        if (valA == null && valB == null) {
+            return true;
+        }
+        if (valA == null || valB == null) {
+            return false;
+        }
         if ( valA.getClass().isArray() && valB.getClass().isArray()) {
             final Object[] arrA = convertToObjectArray(valA);
             final Object[] arrB = convertToObjectArray(valB);
@@ -310,6 +316,24 @@ abstract class ConfigUtil {
         while (keyIter.hasMoreElements() ) {
             final String key = keyIter.nextElement();
             base.put(key, props.get(key));
+        }
+    }
+
+    /**
+     * Removes all properties existing with same key and value in {@code base} from {@code properties}
+     * @param properties the properties to check and modify
+     * @param base the base to compare with
+     */
+    public static void removeRedundantProperties(final Dictionary<String, Object> properties, final Dictionary<String, Object> base ) {
+        final Enumeration<String> keyEnum = base.keys();
+        while ( keyEnum.hasMoreElements() ) {
+            final String key = keyEnum.nextElement();
+            final Object value = base.get(key);
+
+            final Object newValue = properties.get(key);
+            if ( newValue != null && isSameValue(newValue, value)) {
+                properties.remove(key);
+            }
         }
     }
 }
