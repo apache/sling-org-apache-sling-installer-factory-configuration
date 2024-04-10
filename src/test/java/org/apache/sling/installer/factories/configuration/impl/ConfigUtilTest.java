@@ -18,6 +18,7 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.cm.ConfigurationEvent;
 
 public class ConfigUtilTest {
 
@@ -130,5 +132,29 @@ public class ConfigUtilTest {
 
         assertFalse(ConfigUtil.isSameData(a, b));
         assertFalse(ConfigUtil.isSameData(b, a));
+    }
+
+    @Test public void testGetPidWhenPidIsDifferentFromFactoryPid() {
+        ConfigurationEvent event = Mockito.mock(ConfigurationEvent.class);
+        Mockito.when(event.getPid()).thenReturn("a.b.c~c1");
+        Mockito.when(event.getFactoryPid()).thenReturn("a.b.c");
+        String pid = ConfigUtil.getPid(event);
+        assertEquals("a.b.c~c1", pid);
+    }
+
+    @Test public void testGetPidWhenPidContainsFactoryPid() {
+        ConfigurationEvent event = Mockito.mock(ConfigurationEvent.class);
+        Mockito.when(event.getPid()).thenReturn("a.b.c.c1");
+        Mockito.when(event.getFactoryPid()).thenReturn("a.b.c");
+        String pid = ConfigUtil.getPid(event);
+        assertEquals("a.b.c~c1", pid);
+    }
+
+    @Test public void testGetPidWhenFactoryPidIsNull() {
+        ConfigurationEvent event = Mockito.mock(ConfigurationEvent.class);
+        Mockito.when(event.getPid()).thenReturn("a.b.c.c1");
+        Mockito.when(event.getFactoryPid()).thenReturn(null);
+        String pid = ConfigUtil.getPid(event);
+        assertEquals("a.b.c.c1", pid);
     }
 }

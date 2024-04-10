@@ -32,6 +32,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.cm.ConfigurationEvent;
 
 /**
  * Utilities for configuration handling
@@ -335,5 +336,21 @@ abstract class ConfigUtil {
                 properties.remove(key);
             }
         }
+    }
+
+    public static String getPid(final ConfigurationEvent event) {
+        final String id;
+        final String pid;
+        if (event.getFactoryPid() == null ) {
+            id = event.getPid();
+        } else {
+            if (event.getPid().startsWith(event.getFactoryPid() + '.')) {
+                pid = event.getPid().substring(event.getFactoryPid().length() + 1);
+                id = event.getFactoryPid() + "~" + pid;
+            } else {
+                id = event.getPid();
+            }
+        }
+        return id;
     }
 }
