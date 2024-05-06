@@ -3,4 +3,5 @@ Import-Package: !org.osgi.service.metatype, \
   javax.servlet;resolution:=optional,\
   *
 DynamicImport-Package: org.osgi.service.metatype, \
-  org.apache.felix.webconsole.spi
+  org.apache.felix.webconsole.spi, \
+  javax.servlet
