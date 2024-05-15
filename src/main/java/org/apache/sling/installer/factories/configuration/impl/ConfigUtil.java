@@ -346,6 +346,8 @@ abstract class ConfigUtil {
      */
     public static String getPid(final ConfigurationEvent event) {
 
+        // if factory pid is separated from pid by a period (.), we need replace it with a ~ so that this can be installed
+        // and grouped as a factory configuration
         if (event.getFactoryPid() != null && event.getPid().startsWith(event.getFactoryPid() + '.')) {
             String pid = event.getPid().substring(event.getFactoryPid().length() + 1);
             return event.getFactoryPid() + "~" + pid;

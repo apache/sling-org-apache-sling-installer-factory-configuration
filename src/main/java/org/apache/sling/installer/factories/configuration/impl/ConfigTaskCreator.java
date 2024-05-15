@@ -131,7 +131,8 @@ public class ConfigTaskCreator
     @Override
     public void configurationEvent(final ConfigurationEvent event) {
         synchronized ( Coordinator.SHARED ) {
-            // pid in R7 format
+            // pid in R7 format to be sent to change listener so that it can be installed as a factory config
+            // and grouped together along with same factory configs
             final String pid = ConfigUtil.getPid(event);
             if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
