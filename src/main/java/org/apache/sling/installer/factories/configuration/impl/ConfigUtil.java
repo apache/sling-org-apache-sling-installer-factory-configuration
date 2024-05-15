@@ -339,9 +339,10 @@ abstract class ConfigUtil {
     }
 
     /**
-     * Get the PID for a configuration event
+     * Get the PID for a configuration event by using the R7 format
+     *
      * @param event The configuration event
-     * @return The PID
+     * @return The PID in R7 format
      */
     public static String getPid(final ConfigurationEvent event) {
 

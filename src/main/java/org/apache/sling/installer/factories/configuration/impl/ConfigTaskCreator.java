@@ -131,11 +131,12 @@ public class ConfigTaskCreator
     @Override
     public void configurationEvent(final ConfigurationEvent event) {
         synchronized ( Coordinator.SHARED ) {
-            final String id = ConfigUtil.getPid(event);
+            // pid in R7 format
+            final String pid = ConfigUtil.getPid(event);
             if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
                 if ( op == null ) {
-                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, id);
+                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, pid);
                 } else {
                     this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
                 }
@@ -154,8 +155,8 @@ public class ConfigTaskCreator
                         if ( !persist ) {
                             attrs.put(ResourceChangeListener.RESOURCE_PERSIST, Boolean.FALSE);
                         }
-                        attrs.put(Constants.SERVICE_PID, id);
-                        attrs.put(InstallableResource.RESOURCE_URI_HINT, id);
+                        attrs.put(Constants.SERVICE_PID, pid);
+                        attrs.put(InstallableResource.RESOURCE_URI_HINT, pid);
                         if ( config.getBundleLocation() != null ) {
                             attrs.put(InstallableResource.INSTALLATION_HINT, config.getBundleLocation());
                         }
@@ -165,7 +166,7 @@ public class ConfigTaskCreator
                         }
 
                         removeDefaultProperties(this.infoProvider, event.getPid(), dict);
-                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, id, null, dict, attrs);
+                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, pid, null, dict, attrs);
 
                     } else {
                         this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
