@@ -338,19 +338,17 @@ abstract class ConfigUtil {
         }
     }
 
+    /**
+     * Get the PID for a configuration event
+     * @param event The configuration event
+     * @return The PID
+     */
     public static String getPid(final ConfigurationEvent event) {
-        final String id;
-        final String pid;
-        if (event.getFactoryPid() == null ) {
-            id = event.getPid();
-        } else {
-            if (event.getPid().startsWith(event.getFactoryPid() + '.')) {
-                pid = event.getPid().substring(event.getFactoryPid().length() + 1);
-                id = event.getFactoryPid() + "~" + pid;
-            } else {
-                id = event.getPid();
-            }
+
+        if (event.getFactoryPid() != null && event.getPid().startsWith(event.getFactoryPid() + '.')) {
+            String pid = event.getPid().substring(event.getFactoryPid().length() + 1);
+            return event.getFactoryPid() + "~" + pid;
         }
-        return id;
+        return event.getPid();
     }
 }
