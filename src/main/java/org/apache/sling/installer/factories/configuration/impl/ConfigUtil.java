@@ -32,7 +32,6 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.cm.ConfigurationEvent;
 
 /**
  * Utilities for configuration handling
@@ -336,22 +335,5 @@ abstract class ConfigUtil {
                 properties.remove(key);
             }
         }
-    }
-
-    /**
-     * Get the PID for a configuration event by using the R7 format
-     *
-     * @param event The configuration event
-     * @return The PID in R7 format
-     */
-    public static String getPid(final ConfigurationEvent event) {
-
-        // if factory pid is separated from pid by a period (.), we need replace it with a ~ so that this can be installed
-        // and grouped as a factory configuration
-        if (event.getFactoryPid() != null && event.getPid().startsWith(event.getFactoryPid() + '.')) {
-            String pid = event.getPid().substring(event.getFactoryPid().length() + 1);
-            return event.getFactoryPid() + "~" + pid;
-        }
-        return event.getPid();
     }
 }

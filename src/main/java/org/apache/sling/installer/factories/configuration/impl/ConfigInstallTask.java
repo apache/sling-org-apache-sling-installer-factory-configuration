@@ -93,6 +93,9 @@ public class ConfigInstallTask extends AbstractConfigTask {
 
                 Configuration config = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
                 if (config == null) {
+                    config = ConfigUtil.getLegacyFactoryConfig(this.getConfigurationAdmin(), this.factoryPid, null, this.configPid);
+                }
+                if (config == null) {
 
                     config = ConfigUtil.createConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid, location);
                     created = true;

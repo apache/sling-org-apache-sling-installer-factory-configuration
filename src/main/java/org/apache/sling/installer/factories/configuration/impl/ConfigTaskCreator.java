@@ -131,13 +131,10 @@ public class ConfigTaskCreator
     @Override
     public void configurationEvent(final ConfigurationEvent event) {
         synchronized ( Coordinator.SHARED ) {
-            // pid in R7 format to be sent to change listener so that it can be installed as a factory config
-            // and grouped together along with same factory configs
-            final String pid = ConfigUtil.getPid(event);
             if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
                 if ( op == null ) {
-                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, pid);
+                    this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, event.getPid());
                 } else {
                     this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
                 }
@@ -156,8 +153,8 @@ public class ConfigTaskCreator
                         if ( !persist ) {
                             attrs.put(ResourceChangeListener.RESOURCE_PERSIST, Boolean.FALSE);
                         }
-                        attrs.put(Constants.SERVICE_PID, pid);
-                        attrs.put(InstallableResource.RESOURCE_URI_HINT, pid);
+                        attrs.put(Constants.SERVICE_PID, event.getPid());
+                        attrs.put(InstallableResource.RESOURCE_URI_HINT, event.getPid());
                         if ( config.getBundleLocation() != null ) {
                             attrs.put(InstallableResource.INSTALLATION_HINT, config.getBundleLocation());
                         }
@@ -167,7 +164,7 @@ public class ConfigTaskCreator
                         }
 
                         removeDefaultProperties(this.infoProvider, event.getPid(), dict);
-                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, pid, null, dict, attrs);
+                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
                         this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
