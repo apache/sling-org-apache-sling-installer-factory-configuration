@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.sling.installer.api.InstallableResource;
 import org.apache.sling.installer.api.ResourceChangeListener;
@@ -56,6 +58,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ConfigTaskCreator
     implements InstallTaskFactory, ConfigurationListener, ResourceTransformer {
+
+    private static final Pattern FELIX_FACTORY_CONFIG_PATTERN = Pattern.compile("(.*)\\.([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})");
 
     /** Logger. */
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -90,7 +94,7 @@ public class ConfigTaskCreator
                 ResourceTransformer.class.getName()
         };
         final ServiceRegistration<?> reg = bundleContext.registerService(serviceInterfaces, this, props);
-        this.logger.info("OSGi Configuration support for OSGi installer active, default location={}, merge schemes={}", 
+        this.logger.info("OSGi Configuration support for OSGi installer active, default location={}, merge schemes={}",
                 Activator.DEFAULT_LOCATION, Activator.MERGE_SCHEMES);
         return reg;
     }
@@ -252,18 +256,29 @@ public class ConfigTaskCreator
         final Map<String, Object> attr = new HashMap<>();
         final String factoryPid;
         final String configPid;
-        int n = pid.indexOf('~');
-        if ( n == -1 ) {
-            n = pid.indexOf('-');
-        }
-        if (n > 0) {
-            configPid = pid.substring(n + 1);
-            factoryPid = pid.substring(0, n);
-            attr.put(ConfigurationAdmin.SERVICE_FACTORYPID, factoryPid);
+
+        final String[] pids = parseAsFelixFactoryConfigurationPid(pid);
+        if (pids != null && pids.length == 2) {
+            factoryPid = pids[0];
+            configPid = pids[1];
         } else {
-            factoryPid = null;
-            configPid = pid;
+            int n = pid.indexOf('~');
+            if (n == -1) {
+                n = pid.indexOf('-');
+            }
+            if (n > 0) {
+                configPid = pid.substring(n + 1);
+                factoryPid = pid.substring(0, n);
+            } else {
+                factoryPid = null;
+                configPid = pid;
+            }
         }
+
+        if (factoryPid != null) {
+            attr.put(ConfigurationAdmin.SERVICE_FACTORYPID, factoryPid);
+        }
+        // configPid is the "name" in case a factoryPid is present
         attr.put(Constants.SERVICE_PID, configPid);
 
         final TransformationResult tr = new TransformationResult();
@@ -273,6 +288,14 @@ public class ConfigTaskCreator
         tr.setAttributes(attr);
 
         return new TransformationResult[] {tr};
+    }
+
+    private static String[] parseAsFelixFactoryConfigurationPid(String pid) {
+        Matcher matcher = FELIX_FACTORY_CONFIG_PATTERN.matcher(pid);
+        if (matcher.matches()) {
+            return new String[] {matcher.group(1), matcher.group(2)};
+        }
+        return null;
     }
 
     private static final List<String> EXTENSIONS = Arrays.asList(".config", ".properties", ".cfg", ".cfg.json");

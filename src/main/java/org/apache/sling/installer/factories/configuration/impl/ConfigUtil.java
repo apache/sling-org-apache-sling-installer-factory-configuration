@@ -172,7 +172,11 @@ abstract class ConfigUtil {
             final String factoryPid,
             final String configPidOrName)
     throws IOException, InvalidSyntaxException {
-        return getOrCreateConfiguration(ca, factoryPid, configPidOrName, null, false);
+        Configuration config = getOrCreateConfiguration(ca, factoryPid, configPidOrName, null, false);
+        if (config == null && factoryPid != null) {
+            config = getLegacyFactoryConfig(ca, factoryPid, null, configPidOrName);
+        }
+        return config;
     }
 
     public static Configuration createConfiguration(final ConfigurationAdmin ca,
@@ -184,7 +188,7 @@ abstract class ConfigUtil {
     }
 
     /**
-     * 
+     *
      * @param ca
      * @param factoryPid
      * @param configPidOrName
