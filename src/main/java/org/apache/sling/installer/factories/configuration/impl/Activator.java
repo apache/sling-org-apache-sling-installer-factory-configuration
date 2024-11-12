@@ -45,19 +45,20 @@ public class Activator implements BundleActivator {
 
     public static List<String> MERGE_SCHEMES;
 
-
     /**
      * @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext)
      */
     public void start(final BundleContext context) throws Exception {
-        if ( context.getProperty(PROP_LOCATION_DEFAULT) != null ) {
-            final Boolean bool = Boolean.valueOf(context.getProperty(PROP_LOCATION_DEFAULT).toString());
-            if ( bool.booleanValue() ) {
+        if (context.getProperty(PROP_LOCATION_DEFAULT) != null) {
+            final Boolean bool =
+                    Boolean.valueOf(context.getProperty(PROP_LOCATION_DEFAULT).toString());
+            if (bool.booleanValue()) {
                 DEFAULT_LOCATION = "?";
             }
         }
-        if ( context.getProperty(PROP_MERGE_SCHEMES) != null ) {
-            MERGE_SCHEMES = Arrays.asList(context.getProperty(PROP_MERGE_SCHEMES).split(","));
+        if (context.getProperty(PROP_MERGE_SCHEMES) != null) {
+            MERGE_SCHEMES =
+                    Arrays.asList(context.getProperty(PROP_MERGE_SCHEMES).split(","));
         }
         this.listener = new ServicesListener(context);
     }
@@ -66,7 +67,7 @@ public class Activator implements BundleActivator {
      * @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext)
      */
     public void stop(final BundleContext context) {
-        if ( this.listener != null ) {
+        if (this.listener != null) {
             this.listener.deactivate();
             this.listener = null;
         }

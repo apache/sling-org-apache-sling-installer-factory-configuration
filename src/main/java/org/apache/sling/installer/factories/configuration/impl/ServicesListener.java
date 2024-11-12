@@ -77,31 +77,37 @@ public class ServicesListener {
 
     public synchronized void notifyChange() {
         // check if all services are available
-        final ResourceChangeListener listener = (ResourceChangeListener)this.changeHandlerListener.getService();
-        final ConfigurationAdmin configAdmin = (ConfigurationAdmin)this.configAdminListener.getService();
-        final InfoProvider infoProvider = (InfoProvider)this.infoServiceListener.getService();
+        final ResourceChangeListener listener = (ResourceChangeListener) this.changeHandlerListener.getService();
+        final ConfigurationAdmin configAdmin = (ConfigurationAdmin) this.configAdminListener.getService();
+        final InfoProvider infoProvider = (InfoProvider) this.infoServiceListener.getService();
 
-        if ( configAdmin != null && listener != null && infoProvider != null ) {
-            if ( configTaskCreator == null ) {
+        if (configAdmin != null && listener != null && infoProvider != null) {
+            if (configTaskCreator == null) {
                 active.set(true);
                 // start and register osgi installer service
                 this.configTaskCreator = new ConfigTaskCreator(listener, configAdmin, infoProvider);
                 final ConfigUpdateHandler handler = new ConfigUpdateHandler(configAdmin, this);
                 configTaskCreatorRegistration = handler.register(this.bundleContext);
-                if ( Activator.MERGE_SCHEMES != null ) {
-                    this.webconsoleRegistration = this.bundleContext.registerService("org.apache.felix.webconsole.spi.ConfigurationHandler", new ServiceFactory<Object>(){
+                if (Activator.MERGE_SCHEMES != null) {
+                    this.webconsoleRegistration = this.bundleContext.registerService(
+                            "org.apache.felix.webconsole.spi.ConfigurationHandler",
+                            new ServiceFactory<Object>() {
 
-                        @Override
-                        public Object getService(final Bundle bundle, final ServiceRegistration<Object> registration) {
-                            return new WebconsoleConfigurationHandler(bundleContext, infoProvider);
-                        }
+                                @Override
+                                public Object getService(
+                                        final Bundle bundle, final ServiceRegistration<Object> registration) {
+                                    return new WebconsoleConfigurationHandler(bundleContext, infoProvider);
+                                }
 
-                        @Override
-                        public void ungetService(final Bundle bundle, final ServiceRegistration<Object> registration, final Object service) {
-                            ((WebconsoleConfigurationHandler)service).deactivate();
-                        }
-
-                    }, null);
+                                @Override
+                                public void ungetService(
+                                        final Bundle bundle,
+                                        final ServiceRegistration<Object> registration,
+                                        final Object service) {
+                                    ((WebconsoleConfigurationHandler) service).deactivate();
+                                }
+                            },
+                            null);
                 }
             }
         } else {
@@ -112,11 +118,11 @@ public class ServicesListener {
     private synchronized void stop() {
         active.set(false);
         // unregister
-        if ( this.webconsoleRegistration != null ) {
+        if (this.webconsoleRegistration != null) {
             this.webconsoleRegistration.unregister();
             this.webconsoleRegistration = null;
         }
-        if ( this.configTaskCreatorRegistration != null ) {
+        if (this.configTaskCreatorRegistration != null) {
             this.configTaskCreatorRegistration.unregister();
             this.configTaskCreatorRegistration = null;
         }
@@ -128,7 +134,7 @@ public class ServicesListener {
     }
 
     public synchronized void finishedUpdating() {
-        if ( this.isActive() ) {
+        if (this.isActive()) {
             this.configTaskCreatorRegistration.unregister();
             this.configTaskCreatorRegistration = this.configTaskCreator.register(this.bundleContext);
         }
@@ -158,8 +164,7 @@ public class ServicesListener {
         public void start() {
             this.retainService();
             try {
-                bundleContext.addServiceListener(this, "("
-                        + Constants.OBJECTCLASS + "=" + serviceName + ")");
+                bundleContext.addServiceListener(this, "(" + Constants.OBJECTCLASS + "=" + serviceName + ")");
             } catch (final InvalidSyntaxException ise) {
                 // this should really never happen
                 throw new RuntimeException("Unexpected exception occured.", ise);
@@ -173,12 +178,13 @@ public class ServicesListener {
         public synchronized Object getService() {
             return this.service;
         }
+
         private synchronized void retainService() {
-            if ( this.reference == null ) {
+            if (this.reference == null) {
                 this.reference = bundleContext.getServiceReference(this.serviceName);
-                if ( this.reference != null ) {
+                if (this.reference != null) {
                     this.service = bundleContext.getService(this.reference);
-                    if ( this.service == null ) {
+                    if (this.service == null) {
                         this.reference = null;
                     } else {
                         notifyChange();
@@ -188,7 +194,7 @@ public class ServicesListener {
         }
 
         private synchronized void releaseService() {
-            if ( this.reference != null ) {
+            if (this.reference != null) {
                 this.service = null;
                 bundleContext.ungetService(this.reference);
                 this.reference = null;
@@ -201,9 +207,9 @@ public class ServicesListener {
          */
         @Override
         public void serviceChanged(ServiceEvent event) {
-            if (event.getType() == ServiceEvent.REGISTERED ) {
+            if (event.getType() == ServiceEvent.REGISTERED) {
                 this.retainService();
-            } else if ( event.getType() == ServiceEvent.UNREGISTERING ) {
+            } else if (event.getType() == ServiceEvent.UNREGISTERING) {
                 this.releaseService();
             }
         }

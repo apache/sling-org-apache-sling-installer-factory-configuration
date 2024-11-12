@@ -19,5 +19,3 @@
 
 @org.osgi.annotation.versioning.Version("1.1.2")
 package org.apache.sling.installer.factories.configuration;
-
-

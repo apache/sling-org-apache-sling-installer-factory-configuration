@@ -25,7 +25,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Coordinator service.
  *
@@ -61,8 +60,8 @@ public class Coordinator {
 
         @Override
         public String toString() {
-            return "Operation [pid=" + pid + ", factoryPid=" + factoryPid
-                    + ", isDelete=" + isDelete + ", created=" + created + "]";
+            return "Operation [pid=" + pid + ", factoryPid=" + factoryPid + ", isDelete=" + isDelete + ", created="
+                    + created + "]";
         }
     }
 
@@ -94,12 +93,12 @@ public class Coordinator {
         logger.debug("Searching {} : {} - {}", new Object[] {pid, factoryPid, isDelete});
         Operation result = null;
         final Iterator<Operation> i = this.operations.iterator();
-        while ( i.hasNext() ) {
+        while (i.hasNext()) {
             final Operation op = i.next();
-            if ( op.isDelete == isDelete ) {
-                if ( op.pid.equals(pid) ) {
-                    if ( (op.factoryPid == null && factoryPid == null)
-                      || (op.factoryPid != null && op.factoryPid.equals(factoryPid)) ) {
+            if (op.isDelete == isDelete) {
+                if (op.pid.equals(pid)) {
+                    if ((op.factoryPid == null && factoryPid == null)
+                            || (op.factoryPid != null && op.factoryPid.equals(factoryPid))) {
                         result = op;
                         i.remove();
                         break;
@@ -118,9 +117,9 @@ public class Coordinator {
     private void cleanup() {
         final long time = System.currentTimeMillis() - EXPIRY;
         final Iterator<Operation> i = this.operations.iterator();
-        while ( i.hasNext() ) {
+        while (i.hasNext()) {
             final Operation op = i.next();
-            if ( op.created <= time ) {
+            if (op.created <= time) {
                 logger.debug("Deleting expired {}", op);
                 i.remove();
             } else {

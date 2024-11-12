@@ -18,9 +18,9 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class ConfigUpdateHandlerTest {
 
@@ -31,40 +31,44 @@ public class ConfigUpdateHandlerTest {
         assertEquals(pid, result[1]);
     }
 
-    @Test public void testGettingFactoryPid() {
+    @Test
+    public void testGettingFactoryPid() {
         // normal conversion
-        checkFactoryPid("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.43e4778d-3e72-460a-9da9-bca80558f1f7",
+        checkFactoryPid(
+                "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.43e4778d-3e72-460a-9da9-bca80558f1f7",
                 "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.my-platform",
-                "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment", "my-platform");
+                "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment",
+                "my-platform");
         // case where the pid starts with the same characters as the factory pid : "c"
         checkFactoryPid(
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.08f330fd-63d2-4175-ad3c-79efa3c69e2f",
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.cloud",
-                "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup", "cloud");
+                "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup",
+                "cloud");
         // case where the pid starts with the same characters as the factory pid : "co"
         checkFactoryPid(
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.3ba307f5-a5d0-40a4-98b6-8616b7a1d1e8",
                 "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup.contentpackages",
-                "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup", "contentpackages");
+                "com.apache.sling.upgrades.cleanup.impl.UpgradeContentCleanup",
+                "contentpackages");
 
         // case where alias is null and factoryPid and Pid would be inferred from oldId itself
         checkFactoryPid(
                 null,
                 "org.apache.sling.commons.log.LogManager.factory.config.org.apache.sling.commons.log.LogManager.factory.config.3a514ecf-2e1d-4903-bf88-d878360e8ff1",
-                "org.apache.sling.commons.log.LogManager.factory.config", "3a514ecf-2e1d-4903-bf88-d878360e8ff1");
+                "org.apache.sling.commons.log.LogManager.factory.config",
+                "3a514ecf-2e1d-4903-bf88-d878360e8ff1");
 
         // case where alias is null and factoryPid and Pid would be inferred from oldId itself
-        checkFactoryPid(
-                null,
-                "org-test-form-servlet",
-                "org-test-form-servlet", "org-test-form-servlet");
-
+        checkFactoryPid(null, "org-test-form-servlet", "org-test-form-servlet", "org-test-form-servlet");
     }
 
     @Test
     public void testDuplicateFactoryPID() {
-        checkFactoryPid("a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig.5a61b4ab-c8c9-4e20-ab3d-b8b7ea12dfca",
-                "a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig", "a.b.c.MyFactoryConfig",
+        checkFactoryPid(
+                "a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig.5a61b4ab-c8c9-4e20-ab3d-b8b7ea12dfca",
+                "a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig",
+                "a.b.c.MyFactoryConfig",
                 "5a61b4ab-c8c9-4e20-ab3d-b8b7ea12dfca");
     }
 }

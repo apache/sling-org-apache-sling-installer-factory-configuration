@@ -18,6 +18,10 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
+import javax.servlet.GenericServlet;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,10 +34,6 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.stream.Collectors;
-
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 
 import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.serializer.ConfigurationSerializerFactory;
@@ -51,14 +51,15 @@ import org.osgi.service.metatype.MetaTypeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(service=javax.servlet.Servlet.class,
-    property = {
-        Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
-        Constants.SERVICE_DESCRIPTION + "=Apache Sling OSGi Installer Configuration Serializer Web Console Plugin",
-        "felix.webconsole.label=" + ConfigurationSerializerWebConsolePlugin.LABEL,
-        "felix.webconsole.title=OSGi Installer Configuration Printer",
-        "felix.webconsole.category=OSGi"
-    })
+@Component(
+        service = javax.servlet.Servlet.class,
+        property = {
+            Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
+            Constants.SERVICE_DESCRIPTION + "=Apache Sling OSGi Installer Configuration Serializer Web Console Plugin",
+            "felix.webconsole.label=" + ConfigurationSerializerWebConsolePlugin.LABEL,
+            "felix.webconsole.title=OSGi Installer Configuration Printer",
+            "felix.webconsole.category=OSGi"
+        })
 @SuppressWarnings("serial")
 public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
 
@@ -71,7 +72,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     private static final String PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES = "removeMergedDefaultProps";
 
     /** The logger */
-    private final Logger LOGGER =  LoggerFactory.getLogger(ConfigurationSerializerWebConsolePlugin.class);
+    private final Logger LOGGER = LoggerFactory.getLogger(ConfigurationSerializerWebConsolePlugin.class);
 
     @Reference
     ConfigurationAdmin configurationAdmin;
@@ -93,9 +94,8 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     }
 
     @Override
-    public void service(final ServletRequest request, final ServletResponse response)
-            throws IOException {
-        
+    public void service(final ServletRequest request, final ServletResponse response) throws IOException {
+
         final String pid = request.getParameter(PARAMETER_PID);
         final String format = request.getParameter(PARAMETER_FORMAT);
         // initial loading
@@ -108,9 +108,12 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             removeComponentDefaultProperties = true;
             removeMergedDefaultProperties = true;
         } else {
-            removeMetatypeDefaultProperties = Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES));
-            removeComponentDefaultProperties = Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES));
-            removeMergedDefaultProperties = Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES));
+            removeMetatypeDefaultProperties =
+                    Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES));
+            removeComponentDefaultProperties =
+                    Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES));
+            removeMergedDefaultProperties =
+                    Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES));
         }
         Collection<ComponentDescriptionDTO> allComponentDescriptions;
         if (removeComponentDefaultProperties) {
@@ -118,7 +121,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         } else {
             allComponentDescriptions = Collections.emptyList();
         }
-        
+
         MetatypeHandler metatypeHandler = new MetatypeHandler(metatypeService, bundleContext);
         ConfigurationSerializerFactory.Format serializationFormat = Format.JSON;
         if (format != null && !format.trim().isEmpty()) {
@@ -146,10 +149,10 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         pw.print("<input type='text' name='");
         pw.print(PARAMETER_PID);
         pw.print("' value='");
-        if ( pid != null ) {
+        if (pid != null) {
             pw.print(escapeXml(pid));
         }
-        
+
         pw.println("' class='input' size='120' minlength='3'>");
         closeTd(pw);
         closeTr(pw);
@@ -161,10 +164,10 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         pw.print("<input type='checkbox' name='");
         pw.print(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES);
         pw.print("'");
-        if ( removeMetatypeDefaultProperties ) {
+        if (removeMetatypeDefaultProperties) {
             pw.print(" checked");
         }
-        
+
         pw.println(" id='");
         pw.print(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES);
         pw.println("' class='input' value='true'>");
@@ -175,7 +178,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         pw.print("<input type='checkbox' name='");
         pw.print(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES);
         pw.print("'");
-        if ( removeComponentDefaultProperties ) {
+        if (removeComponentDefaultProperties) {
             pw.print(" checked");
         }
 
@@ -190,10 +193,10 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             pw.print("<input type='checkbox' name='");
             pw.print(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES);
             pw.print("'");
-            if ( removeMergedDefaultProperties ) {
+            if (removeMergedDefaultProperties) {
                 pw.print(" checked");
             }
-            
+
             pw.println(" id='");
             pw.print(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES);
             pw.println("' class='input' value='true'>");
@@ -201,7 +204,8 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             pw.println(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES);
             pw.println("'>Merged Properties</label>");
         }
-        pw.println("<p>Selecting any of these options strips those properties which have the same name and value as one from any of the selected sources. The removed properties are very likely being redundant and therefore do not need to be added to serialized configs.</a>");
+        pw.println(
+                "<p>Selecting any of these options strips those properties which have the same name and value as one from any of the selected sources. The removed properties are very likely being redundant and therefore do not need to be added to serialized configs.</a>");
         closeTd(pw);
         closeTr(pw);
 
@@ -240,10 +244,16 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
                 properties = ConfigUtil.cleanConfiguration(properties);
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                     if (removeMetatypeDefaultProperties) {
-                        metatypeHandler.updateConfiguration(configuration.getFactoryPid(), configuration.getPid(), properties, mergedProperties);
+                        metatypeHandler.updateConfiguration(
+                                configuration.getFactoryPid(), configuration.getPid(), properties, mergedProperties);
                     }
                     if (removeComponentDefaultProperties) {
-                        removeComponentDefaultProperties(allComponentDescriptions, configuration.getPid(), configuration.getFactoryPid(), properties, mergedProperties);
+                        removeComponentDefaultProperties(
+                                allComponentDescriptions,
+                                configuration.getPid(),
+                                configuration.getFactoryPid(),
+                                properties,
+                                mergedProperties);
                     }
                     if (removeMergedDefaultProperties) {
                         ConfigUtil.removeRedundantProperties(properties, mergedProperties);
@@ -330,17 +340,17 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         }
 
         final StringBuilder b = new StringBuilder(input.length());
-        for(int i = 0;i  < input.length(); i++) {
+        for (int i = 0; i < input.length(); i++) {
             final char c = input.charAt(i);
-            if(c == '&') {
+            if (c == '&') {
                 b.append("&amp;");
-            } else if(c == '<') {
+            } else if (c == '<') {
                 b.append("&lt;");
-            } else if(c == '>') {
+            } else if (c == '>') {
                 b.append("&gt;");
-            } else if(c == '"') {
+            } else if (c == '"') {
                 b.append("&quot;");
-            } else if(c == '\'') {
+            } else if (c == '\'') {
                 b.append("&apos;");
             } else {
                 b.append(c);
@@ -358,19 +368,25 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
      * @param dict
      * @param mergedProperties
      */
-    private void removeComponentDefaultProperties(final Collection<ComponentDescriptionDTO> componentDescriptions, final String pid, final String factoryPid, final Dictionary<String, Object> dict, final Dictionary<String, Object> mergedProperties) {
+    private void removeComponentDefaultProperties(
+            final Collection<ComponentDescriptionDTO> componentDescriptions,
+            final String pid,
+            final String factoryPid,
+            final Dictionary<String, Object> dict,
+            final Dictionary<String, Object> mergedProperties) {
         String effectivePid = factoryPid != null ? factoryPid : pid;
         Collection<ComponentDescriptionDTO> relevantComponentDescriptions = componentDescriptions.stream()
-            // find all with a matching pid
-            .filter(c -> Arrays.asList(c.configurationPid).contains(effectivePid)).collect(Collectors.toList());
+                // find all with a matching pid
+                .filter(c -> Arrays.asList(c.configurationPid).contains(effectivePid))
+                .collect(Collectors.toList());
 
         final Enumeration<String> e = dict.keys();
-        while(e.hasMoreElements()) {
+        while (e.hasMoreElements()) {
             final String key = e.nextElement();
             final Object newValue = dict.get(key);
             if (relevantComponentDescriptions.stream()
-                    .allMatch(c -> ConfigUtil.isSameValue(newValue, c.properties.get(key)) 
-                                   && mergedProperties.get(key) == null)) {
+                    .allMatch(c -> ConfigUtil.isSameValue(newValue, c.properties.get(key))
+                            && mergedProperties.get(key) == null)) {
                 dict.remove(key);
             }
         }

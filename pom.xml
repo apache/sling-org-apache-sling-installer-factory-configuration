@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
@@ -29,34 +30,18 @@
     <version>1.4.7-SNAPSHOT</version>
 
     <name>Apache Sling Installer Configuration Factory</name>
-    <description> 
-        Provides support for configurations to the Apache Sling OSGi installer
-    </description>
-
-    <properties>
-        <sling.java.version>8</sling.java.version>
-    </properties>
+    <description>Provides support for configurations to the Apache Sling OSGi installer</description>
 
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-factory-configuration.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-installer-factory-configuration.git</developerConnection>
-        <url>https://github.com/apache/sling-org-apache-sling-installer-factory-configuration.git</url>
         <tag>HEAD</tag>
+        <url>https://github.com/apache/sling-org-apache-sling-installer-factory-configuration.git</url>
     </scm>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <excludePackageNames>
-                        org.apache.sling.installer.factories.configuration.impl
-                    </excludePackageNames>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <properties>
+        <sling.java.version>8</sling.java.version>
+    </properties>
 
     <dependencies>
         <!-- OSGi annotations (OSGi R7) -->
@@ -150,4 +135,16 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <excludePackageNames>org.apache.sling.installer.factories.configuration.impl</excludePackageNames>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

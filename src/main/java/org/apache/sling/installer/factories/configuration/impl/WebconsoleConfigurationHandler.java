@@ -49,28 +49,28 @@ public class WebconsoleConfigurationHandler implements ConfigurationHandler {
 
     @Override
     public void createConfiguration(final String pid) throws ValidationException, IOException {
-        // nothing to do        
+        // nothing to do
     }
 
     @Override
-    public void createFactoryConfiguration(final String factoryPid, String name) throws ValidationException, IOException {
-        // nothing to do        
+    public void createFactoryConfiguration(final String factoryPid, String name)
+            throws ValidationException, IOException {
+        // nothing to do
     }
 
     @Override
     public void deleteConfiguration(final String factoryPid, final String pid) throws ValidationException, IOException {
-        // nothing to do        
+        // nothing to do
     }
 
     @Override
     public void updateConfiguration(final String factoryPid, final String pid, final Dictionary<String, Object> props)
             throws ValidationException, IOException {
         final MetaTypeService mts = this.metatypeTracker.getService();
-        if ( mts != null ) {
+        if (mts != null) {
             final Dictionary<String, Object> defaultProps = ConfigTaskCreator.getDefaultProperties(infoProvider, pid);
             final MetatypeHandler mt = new MetatypeHandler(mts, this.bundleContext);
             mt.updateConfiguration(factoryPid, pid, props, defaultProps);
         }
     }
-    
 }

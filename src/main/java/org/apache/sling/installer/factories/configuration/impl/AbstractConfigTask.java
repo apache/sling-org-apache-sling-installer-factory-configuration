@@ -46,8 +46,8 @@ abstract class AbstractConfigTask extends InstallTask {
     AbstractConfigTask(final TaskResourceGroup r, final ConfigurationAdmin configAdmin) {
         super(r);
         this.configAdmin = configAdmin;
-        this.configPid = (String)getResource().getAttribute(Constants.SERVICE_PID);
-        this.factoryPid = (String)getResource().getAttribute(ConfigurationAdmin.SERVICE_FACTORYPID);
+        this.configPid = (String) getResource().getAttribute(Constants.SERVICE_PID);
+        this.factoryPid = (String) getResource().getAttribute(ConfigurationAdmin.SERVICE_FACTORYPID);
     }
 
     protected Logger getLogger() {
@@ -55,7 +55,7 @@ abstract class AbstractConfigTask extends InstallTask {
     }
 
     protected String getRealPID() {
-        if ( this.factoryPid != null ) {
+        if (this.factoryPid != null) {
             return ConfigUtil.getPIDOfFactoryPID(this.factoryPid, this.configPid);
         } else {
             return this.configPid;

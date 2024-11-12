@@ -57,6 +57,7 @@ abstract class ConfigUtil {
 
     /** Configuration properties to ignore when comparing configs */
     private static final Set<String> IGNORED_PROPERTIES = new HashSet<>();
+
     static {
         IGNORED_PROPERTIES.add(Constants.SERVICE_PID);
         IGNORED_PROPERTIES.add(CONFIG_PATH_KEY);
@@ -64,12 +65,12 @@ abstract class ConfigUtil {
         IGNORED_PROPERTIES.add(ConfigurationAdmin.SERVICE_FACTORYPID);
     }
 
-    private static Set<String> collectKeys(final Dictionary<String, Object>a) {
+    private static Set<String> collectKeys(final Dictionary<String, Object> a) {
         final Set<String> keys = new HashSet<>();
         final Enumeration<String> aI = a.keys();
-        while (aI.hasMoreElements() ) {
+        while (aI.hasMoreElements()) {
             final String key = aI.nextElement();
-            if ( !IGNORED_PROPERTIES.contains(key) ) {
+            if (!IGNORED_PROPERTIES.contains(key)) {
                 keys.add(key);
             }
         }
@@ -83,25 +84,25 @@ abstract class ConfigUtil {
      */
     private static Object[] convertToObjectArray(final Object value) {
         final Object[] values = new Object[Array.getLength(value)];
-        for(int i=0;i<values.length;i++) {
+        for (int i = 0; i < values.length; i++) {
             values[i] = Array.get(value, i);
         }
         return values;
     }
 
     /** True if a and b represent the same config data, ignoring "non-configuration" keys in the dictionaries */
-    public static boolean isSameData(Dictionary<String, Object>a, Dictionary<String, Object>b) {
+    public static boolean isSameData(Dictionary<String, Object> a, Dictionary<String, Object> b) {
         boolean result = false;
         if (a != null && b != null) {
             final Set<String> keysA = collectKeys(a);
             final Set<String> keysB = collectKeys(b);
-            if ( keysA.size() == keysB.size() && keysA.containsAll(keysB) ) {
+            if (keysA.size() == keysB.size() && keysA.containsAll(keysB)) {
                 result = true;
-                for(final String key : keysA ) {
+                for (final String key : keysA) {
                     final Object valA = a.get(key);
                     final Object valB = b.get(key);
 
-                    if ( !isSameValue(valA, valB) ) {
+                    if (!isSameValue(valA, valB)) {
                         result = false;
                         break;
                     }
@@ -118,21 +119,21 @@ abstract class ConfigUtil {
         if (valA == null || valB == null) {
             return false;
         }
-        if ( valA.getClass().isArray() && valB.getClass().isArray()) {
+        if (valA.getClass().isArray() && valB.getClass().isArray()) {
             final Object[] arrA = convertToObjectArray(valA);
             final Object[] arrB = convertToObjectArray(valB);
 
-            if ( arrA.length != arrB.length ) {
+            if (arrA.length != arrB.length) {
                 return false;
             }
-            for(int i=0; i<arrA.length; i++) {
-                if ( !(String.valueOf(arrA[i]).equals(String.valueOf(arrB[i]))) ) {
+            for (int i = 0; i < arrA.length; i++) {
+                if (!(String.valueOf(arrA[i]).equals(String.valueOf(arrB[i])))) {
                     return false;
                 }
             }
         } else if (!valA.getClass().isArray() && !valB.getClass().isArray()) {
             // if no arrays do a string comparison
-            if ( !(String.valueOf(valA).equals(String.valueOf(valB))) ) {
+            if (!(String.valueOf(valA).equals(String.valueOf(valB)))) {
                 return false;
             }
         } else {
@@ -148,9 +149,9 @@ abstract class ConfigUtil {
     public static Dictionary<String, Object> cleanConfiguration(final Dictionary<String, Object> config) {
         final Dictionary<String, Object> cleanedConfig = new Hashtable<>();
         final Enumeration<String> e = config.keys();
-        while(e.hasMoreElements()) {
+        while (e.hasMoreElements()) {
             final String key = e.nextElement();
-            if ( !IGNORED_PROPERTIES.contains(key) ) {
+            if (!IGNORED_PROPERTIES.contains(key)) {
                 cleanedConfig.put(key, config.get(key));
             }
         }
@@ -168,10 +169,9 @@ abstract class ConfigUtil {
                 .replace(")", "\\)");
     }
 
-    public static Configuration getConfiguration(final ConfigurationAdmin ca,
-            final String factoryPid,
-            final String configPidOrName)
-    throws IOException, InvalidSyntaxException {
+    public static Configuration getConfiguration(
+            final ConfigurationAdmin ca, final String factoryPid, final String configPidOrName)
+            throws IOException, InvalidSyntaxException {
         Configuration config = getOrCreateConfiguration(ca, factoryPid, configPidOrName, null, false);
         if (config == null && factoryPid != null) {
             config = getLegacyFactoryConfig(ca, factoryPid, null, configPidOrName);
@@ -179,11 +179,9 @@ abstract class ConfigUtil {
         return config;
     }
 
-    public static Configuration createConfiguration(final ConfigurationAdmin ca,
-            final String factoryPid,
-            final String configPidOrName,
-            final String location)
-    throws IOException, InvalidSyntaxException {
+    public static Configuration createConfiguration(
+            final ConfigurationAdmin ca, final String factoryPid, final String configPidOrName, final String location)
+            throws IOException, InvalidSyntaxException {
         return getOrCreateConfiguration(ca, factoryPid, configPidOrName, location, true);
     }
 
@@ -198,20 +196,20 @@ abstract class ConfigUtil {
      * @throws IOException - if access to persistent storage fails
      * @throws InvalidSyntaxException
      */
-    private static Configuration getOrCreateConfiguration(final ConfigurationAdmin ca,
+    private static Configuration getOrCreateConfiguration(
+            final ConfigurationAdmin ca,
             final String factoryPid,
             final String configPidOrName,
             final String location,
             final boolean createIfNeeded)
-    throws IOException, InvalidSyntaxException {
+            throws IOException, InvalidSyntaxException {
         Configuration result = null;
 
         if (factoryPid == null) {
             if (createIfNeeded) {
                 result = ca.getConfiguration(configPidOrName, location);
             } else {
-                final String filter = "(" + Constants.SERVICE_PID + "=" + encode(configPidOrName)
-                        + ")";
+                final String filter = "(" + Constants.SERVICE_PID + "=" + encode(configPidOrName) + ")";
                 final Configuration[] configs = ca.listConfigurations(filter);
                 if (configs != null && configs.length > 0) {
                     result = configs[0];
@@ -222,10 +220,11 @@ abstract class ConfigUtil {
                 result = ca.getFactoryConfiguration(factoryPid, configPidOrName, location);
             } else {
                 final String filter = "(&("
-                       + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
-                       + ")("
-                       + Constants.SERVICE_PID + "=" + encode(ConfigUtil.getPIDOfFactoryPID(factoryPid, configPidOrName))
-                       + "))";
+                        + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
+                        + ")("
+                        + Constants.SERVICE_PID + "="
+                        + encode(ConfigUtil.getPIDOfFactoryPID(factoryPid, configPidOrName))
+                        + "))";
                 final Configuration[] configs = ca.listConfigurations(filter);
                 if (configs != null && configs.length > 0) {
                     result = configs[0];
@@ -236,17 +235,15 @@ abstract class ConfigUtil {
         return result;
     }
 
-    public static Configuration getLegacyFactoryConfig(final ConfigurationAdmin ca,
-            final String factoryPid,
-            final String aliasPid,
-            final String pid)
-    throws IOException, InvalidSyntaxException {
+    public static Configuration getLegacyFactoryConfig(
+            final ConfigurationAdmin ca, final String factoryPid, final String aliasPid, final String pid)
+            throws IOException, InvalidSyntaxException {
         final String configPid = (aliasPid != null ? aliasPid.substring(factoryPid.length() + 1) : pid);
 
         Configuration result = null;
 
         Configuration configs[] = null;
-        if ( configPid != null ) {
+        if (configPid != null) {
             configs = ca.listConfigurations("(&("
                     + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + encode(factoryPid)
                     + ")(" + Constants.SERVICE_PID + "=" + encode(configPid)
@@ -260,8 +257,7 @@ abstract class ConfigUtil {
         }
         if (configs == null || configs.length == 0) {
             // check for old style with alias pid
-            configs = ca.listConfigurations(
-                    "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID
+            configs = ca.listConfigurations("(&(" + ConfigurationAdmin.SERVICE_FACTORYPID
                     + "=" + factoryPid + ")(" + ALIAS_KEY + "=" + encode(configPid)
                     + "))");
 
@@ -276,7 +272,7 @@ abstract class ConfigUtil {
 
     public static boolean toBoolean(final Object obj, final boolean defaultValue) {
         boolean result = defaultValue;
-        if ( obj != null ) {
+        if (obj != null) {
             if (obj instanceof Boolean) {
                 result = ((Boolean) obj).booleanValue();
             } else {
@@ -304,7 +300,7 @@ abstract class ConfigUtil {
     public static Dictionary<String, Object> mergeReverseOrder(final List<Dictionary<String, Object>> propertiesList) {
         Collections.reverse(propertiesList);
         final Dictionary<String, Object> properties = new Hashtable<>();
-        for(final Dictionary<String, Object> dict : propertiesList) {
+        for (final Dictionary<String, Object> dict : propertiesList) {
             merge(properties, dict);
         }
         return properties;
@@ -317,7 +313,7 @@ abstract class ConfigUtil {
      */
     private static void merge(final Dictionary<String, Object> base, final Dictionary<String, Object> props) {
         final Enumeration<String> keyIter = props.keys();
-        while (keyIter.hasMoreElements() ) {
+        while (keyIter.hasMoreElements()) {
             final String key = keyIter.nextElement();
             base.put(key, props.get(key));
         }
@@ -328,14 +324,15 @@ abstract class ConfigUtil {
      * @param properties the properties to check and modify
      * @param base the base to compare with
      */
-    public static void removeRedundantProperties(final Dictionary<String, Object> properties, final Dictionary<String, Object> base ) {
+    public static void removeRedundantProperties(
+            final Dictionary<String, Object> properties, final Dictionary<String, Object> base) {
         final Enumeration<String> keyEnum = base.keys();
-        while ( keyEnum.hasMoreElements() ) {
+        while (keyEnum.hasMoreElements()) {
             final String key = keyEnum.nextElement();
             final Object value = base.get(key);
 
             final Object newValue = properties.get(key);
-            if ( newValue != null && isSameValue(newValue, value)) {
+            if (newValue != null && isSameValue(newValue, value)) {
                 properties.remove(key);
             }
         }

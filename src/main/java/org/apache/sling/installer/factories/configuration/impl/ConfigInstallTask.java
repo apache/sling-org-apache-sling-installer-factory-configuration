@@ -50,26 +50,26 @@ public class ConfigInstallTask extends AbstractConfigTask {
         return CONFIG_INSTALL_ORDER + getRealPID();
     }
 
-	@Override
+    @Override
     protected Dictionary<String, Object> getDictionary() {
         Dictionary<String, Object> properties = super.getDictionary();
 
-        if ( Activator.MERGE_SCHEMES != null ) {
+        if (Activator.MERGE_SCHEMES != null) {
             final List<Dictionary<String, Object>> propertiesList = new ArrayList<>();
             propertiesList.add(properties);
             final Iterator<TaskResource> iter = this.getResourceGroup().getActiveResourceIterator();
-            if ( iter != null ) {
+            if (iter != null) {
                 // skip first active resource
                 iter.next();
-                while ( iter.hasNext()) {
+                while (iter.hasNext()) {
                     final TaskResource rsrc = iter.next();
-                    
-                    if ( Activator.MERGE_SCHEMES.contains(rsrc.getScheme())) {
+
+                    if (Activator.MERGE_SCHEMES.contains(rsrc.getScheme())) {
                         propertiesList.add(rsrc.getDictionary());
                     }
                 }
             }
-            if ( propertiesList.size() > 1 ) {
+            if (propertiesList.size() > 1) {
                 properties = ConfigUtil.mergeReverseOrder(propertiesList);
             }
         }
@@ -78,50 +78,62 @@ public class ConfigInstallTask extends AbstractConfigTask {
 
     @Override
     public void execute(final InstallationContext ctx) {
-        synchronized ( Coordinator.SHARED ) {
+        synchronized (Coordinator.SHARED) {
             // Get or create configuration, but do not
             // update if the new one has the same values.
             final Dictionary<String, Object> properties = this.getDictionary();
             boolean created = false;
             try {
-                String location = (String)properties.get(ConfigurationConstants.PROPERTY_BUNDLE_LOCATION);
-                if ( location == null ) {
+                String location = (String) properties.get(ConfigurationConstants.PROPERTY_BUNDLE_LOCATION);
+                if (location == null) {
                     location = Activator.DEFAULT_LOCATION; // default
-                } else if ( location.length() == 0 ) {
+                } else if (location.length() == 0) {
                     location = null;
                 }
 
-                Configuration config = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
+                Configuration config =
+                        ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
                 if (config == null) {
 
-                    config = ConfigUtil.createConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid, location);
+                    config = ConfigUtil.createConfiguration(
+                            this.getConfigurationAdmin(), this.factoryPid, this.configPid, location);
                     created = true;
                 } else {
-        			if (ConfigUtil.isSameData(config.getProperties(), properties)) {
-        			    this.getLogger().debug("Configuration {} already installed with same data, update request ignored: {}",
-        	                        config.getPid(), getResource());
-        				config = null;
-        			} else {
+                    if (ConfigUtil.isSameData(config.getProperties(), properties)) {
+                        this.getLogger()
+                                .debug(
+                                        "Configuration {} already installed with same data, update request ignored: {}",
+                                        config.getPid(),
+                                        getResource());
+                        config = null;
+                    } else {
                         config.setBundleLocation(location);
-        			}
+                    }
                 }
 
                 if (config != null) {
                     config.update(properties);
                     ctx.log("Installed configuration {} from resource {}", config.getPid(), getResource());
-                    this.getLogger().debug("Configuration " + config.getPid()
-                                + " " + (created ? "created" : "updated")
-                                + " from " + getResource());
+                    this.getLogger()
+                            .debug("Configuration " + config.getPid()
+                                    + " " + (created ? "created" : "updated")
+                                    + " from " + getResource());
                     final Operation op = new Coordinator.Operation(config.getPid(), config.getFactoryPid(), false);
                     Coordinator.SHARED.add(op);
                 }
                 // in any case set the state to "INSTALLED"
-                // (it doesn't matter if the configuration hasn't been updated as it has been in the correct state already)
+                // (it doesn't matter if the configuration hasn't been updated as it has been in the correct state
+                // already)
                 this.setFinishedState(ResourceState.INSTALLED);
-            } catch (IOException|IllegalStateException e) {
-                this.getLogger().debug("Temporary exception during installation of config " + this.getResource() + " : " + e.getMessage() + ". Retrying later.", e);
+            } catch (IOException | IllegalStateException e) {
+                this.getLogger()
+                        .debug(
+                                "Temporary exception during installation of config " + this.getResource() + " : "
+                                        + e.getMessage() + ". Retrying later.",
+                                e);
             } catch (Exception e) {
-                String message = MessageFormat.format("Exception during installation of config {0} : {1}", this.getResource(), e.getMessage());
+                String message = MessageFormat.format(
+                        "Exception during installation of config {0} : {1}", this.getResource(), e.getMessage());
                 this.getLogger().error(message, e);
                 this.setFinishedState(ResourceState.IGNORED, null, message);
             }

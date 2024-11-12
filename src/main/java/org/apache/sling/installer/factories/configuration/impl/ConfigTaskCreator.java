@@ -56,10 +56,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Task creator for configurations.
  */
-public class ConfigTaskCreator
-    implements InstallTaskFactory, ConfigurationListener, ResourceTransformer {
+public class ConfigTaskCreator implements InstallTaskFactory, ConfigurationListener, ResourceTransformer {
 
-    private static final Pattern FELIX_FACTORY_CONFIG_PATTERN = Pattern.compile("(.*)\\.([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})");
+    private static final Pattern FELIX_FACTORY_CONFIG_PATTERN =
+            Pattern.compile("(.*)\\.([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})");
 
     /** Logger. */
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -73,7 +73,8 @@ public class ConfigTaskCreator
     /** Info Provider */
     private final InfoProvider infoProvider;
 
-    public ConfigTaskCreator(final ResourceChangeListener listener,
+    public ConfigTaskCreator(
+            final ResourceChangeListener listener,
             final ConfigurationAdmin configAdmin,
             final InfoProvider infoProvider) {
         this.changeListener = listener;
@@ -88,78 +89,83 @@ public class ConfigTaskCreator
         props.put(InstallTaskFactory.NAME, "org.osgi.service.cm");
         props.put(ResourceTransformer.NAME, "org.osgi.service.cm");
 
-        final String [] serviceInterfaces = {
-                InstallTaskFactory.class.getName(),
-                ConfigurationListener.class.getName(),
-                ResourceTransformer.class.getName()
+        final String[] serviceInterfaces = {
+            InstallTaskFactory.class.getName(),
+            ConfigurationListener.class.getName(),
+            ResourceTransformer.class.getName()
         };
         final ServiceRegistration<?> reg = bundleContext.registerService(serviceInterfaces, this, props);
-        this.logger.info("OSGi Configuration support for OSGi installer active, default location={}, merge schemes={}",
-                Activator.DEFAULT_LOCATION, Activator.MERGE_SCHEMES);
+        this.logger.info(
+                "OSGi Configuration support for OSGi installer active, default location={}, merge schemes={}",
+                Activator.DEFAULT_LOCATION,
+                Activator.MERGE_SCHEMES);
         return reg;
     }
 
     /**
      * Create a task to install or uninstall a configuration.
      *
-	 * @see org.apache.sling.installer.api.tasks.InstallTaskFactory#createTask(org.apache.sling.installer.api.tasks.TaskResourceGroup)
-	 */
-	@Override
+     * @see org.apache.sling.installer.api.tasks.InstallTaskFactory#createTask(org.apache.sling.installer.api.tasks.TaskResourceGroup)
+     */
+    @Override
     public InstallTask createTask(final TaskResourceGroup group) {
         final TaskResource toActivate = group.getActiveResource();
-        if ( !toActivate.getType().equals(InstallableResource.TYPE_CONFIG) ) {
+        if (!toActivate.getType().equals(InstallableResource.TYPE_CONFIG)) {
             return null;
         }
 
         final InstallTask result;
-		if (toActivate.getState() == ResourceState.UNINSTALL) {
+        if (toActivate.getState() == ResourceState.UNINSTALL) {
             // if this is an uninstall, check if we have to install an older version
             // in this case we should do an update instead of uninstall/install (!)
             final TaskResource second = group.getNextActiveResource();
-            if ( second != null
-                && ( second.getState() == ResourceState.IGNORED || second.getState() == ResourceState.INSTALLED || second.getState() == ResourceState.INSTALL )
-                && ( second.getDictionary() == null || second.getDictionary().get(InstallableResource.RESOURCE_IS_TEMPLATE) == null)) {
+            if (second != null
+                    && (second.getState() == ResourceState.IGNORED
+                            || second.getState() == ResourceState.INSTALLED
+                            || second.getState() == ResourceState.INSTALL)
+                    && (second.getDictionary() == null
+                            || second.getDictionary().get(InstallableResource.RESOURCE_IS_TEMPLATE) == null)) {
                 result = new ChangeStateTask(group, ResourceState.UNINSTALLED);
             } else {
                 result = new ConfigRemoveTask(group, this.configAdmin);
             }
-		} else {
-	        result = new ConfigInstallTask(group, this.configAdmin);
-		}
-		return result;
-	}
+        } else {
+            result = new ConfigInstallTask(group, this.configAdmin);
+        }
+        return result;
+    }
 
     /**
      * @see org.osgi.service.cm.ConfigurationListener#configurationEvent(org.osgi.service.cm.ConfigurationEvent)
      */
     @Override
     public void configurationEvent(final ConfigurationEvent event) {
-        synchronized ( Coordinator.SHARED ) {
-            if ( event.getType() == ConfigurationEvent.CM_DELETED ) {
+        synchronized (Coordinator.SHARED) {
+            if (event.getType() == ConfigurationEvent.CM_DELETED) {
                 final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), true);
-                if ( op == null ) {
+                if (op == null) {
                     this.changeListener.resourceRemoved(InstallableResource.TYPE_CONFIG, event.getPid());
                 } else {
                     this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
                 }
-            } else if ( event.getType() == ConfigurationEvent.CM_UPDATED ) {
+            } else if (event.getType() == ConfigurationEvent.CM_UPDATED) {
                 try {
                     // we just need to pass in the pid as we're using named factory configs
-                    final Configuration config = ConfigUtil.getConfiguration(configAdmin,
-                            null,
-                            event.getPid());
-                    final Coordinator.Operation op = Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), false);
-                    if ( config != null && op == null ) {
-                        final boolean persist = ConfigUtil.toBoolean(config.getProperties().get(ConfigurationConstants.PROPERTY_PERSISTENCE), true);
+                    final Configuration config = ConfigUtil.getConfiguration(configAdmin, null, event.getPid());
+                    final Coordinator.Operation op =
+                            Coordinator.SHARED.get(event.getPid(), event.getFactoryPid(), false);
+                    if (config != null && op == null) {
+                        final boolean persist = ConfigUtil.toBoolean(
+                                config.getProperties().get(ConfigurationConstants.PROPERTY_PERSISTENCE), true);
 
                         final Dictionary<String, Object> dict = ConfigUtil.cleanConfiguration(config.getProperties());
                         final Map<String, Object> attrs = new HashMap<>();
-                        if ( !persist ) {
+                        if (!persist) {
                             attrs.put(ResourceChangeListener.RESOURCE_PERSIST, Boolean.FALSE);
                         }
                         attrs.put(Constants.SERVICE_PID, event.getPid());
                         attrs.put(InstallableResource.RESOURCE_URI_HINT, event.getPid());
-                        if ( config.getBundleLocation() != null ) {
+                        if (config.getBundleLocation() != null) {
                             attrs.put(InstallableResource.INSTALLATION_HINT, config.getBundleLocation());
                         }
                         // Factory?
@@ -168,12 +174,14 @@ public class ConfigTaskCreator
                         }
 
                         removeDefaultProperties(this.infoProvider, event.getPid(), dict);
-                        this.changeListener.resourceAddedOrUpdated(InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
+                        this.changeListener.resourceAddedOrUpdated(
+                                InstallableResource.TYPE_CONFIG, event.getPid(), null, dict, attrs);
 
                     } else {
-                        this.logger.debug("Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
+                        this.logger.debug(
+                                "Ignoring configuration event for {}:{}", event.getPid(), event.getFactoryPid());
                     }
-                } catch ( final Exception ignore) {
+                } catch (final Exception ignore) {
                     // ignore for now
                 }
             }
@@ -181,24 +189,24 @@ public class ConfigTaskCreator
     }
 
     public static Dictionary<String, Object> getDefaultProperties(final InfoProvider infoProvider, final String pid) {
-        if ( Activator.MERGE_SCHEMES != null ) {
+        if (Activator.MERGE_SCHEMES != null) {
             final List<Dictionary<String, Object>> propertiesList = new ArrayList<>();
             final String entityId = InstallableResource.TYPE_CONFIG.concat(":").concat(pid);
             boolean done = false;
-            for(final ResourceGroup group : infoProvider.getInstallationState().getInstalledResources()) {
-                for(final Resource rsrc : group.getResources()) {
-                    if ( rsrc.getEntityId().equals(entityId) ) {
+            for (final ResourceGroup group : infoProvider.getInstallationState().getInstalledResources()) {
+                for (final Resource rsrc : group.getResources()) {
+                    if (rsrc.getEntityId().equals(entityId)) {
                         done = true;
-                        if ( Activator.MERGE_SCHEMES.contains(rsrc.getScheme()) ) {
+                        if (Activator.MERGE_SCHEMES.contains(rsrc.getScheme())) {
                             propertiesList.add(rsrc.getDictionary());
                         }
                     }
                 }
-                if ( done ) {
+                if (done) {
                     break;
                 }
             }
-            if ( !propertiesList.isEmpty() ) {
+            if (!propertiesList.isEmpty()) {
                 final Dictionary<String, Object> defaultProps = ConfigUtil.mergeReverseOrder(propertiesList);
                 return defaultProps;
             }
@@ -206,10 +214,11 @@ public class ConfigTaskCreator
         return null;
     }
 
-    public static void removeDefaultProperties(final InfoProvider infoProvider, final String pid, final Dictionary<String, Object> dict) {
-        if ( Activator.MERGE_SCHEMES != null ) {
+    public static void removeDefaultProperties(
+            final InfoProvider infoProvider, final String pid, final Dictionary<String, Object> dict) {
+        if (Activator.MERGE_SCHEMES != null) {
             final Dictionary<String, Object> defaultProps = getDefaultProperties(infoProvider, pid);
-            if ( defaultProps != null ) {
+            if (defaultProps != null) {
                 ConfigUtil.removeRedundantProperties(dict, defaultProps);
             }
         }
@@ -220,7 +229,7 @@ public class ConfigTaskCreator
      */
     @Override
     public TransformationResult[] transform(final RegisteredResource resource) {
-        if ( resource.getType().equals(InstallableResource.TYPE_PROPERTIES) ) {
+        if (resource.getType().equals(InstallableResource.TYPE_PROPERTIES)) {
             return checkConfiguration(resource);
         }
         return null;
@@ -229,12 +238,12 @@ public class ConfigTaskCreator
     private static String getResourceId(final String rawUrl) {
         final String url = separatorsToUnix(rawUrl);
         int pos = url.lastIndexOf('/');
-        if ( pos == -1 ) {
+        if (pos == -1) {
             pos = url.indexOf(':');
         }
 
         final String lastIdPart;
-        if ( pos != -1 ) {
+        if (pos != -1) {
             lastIdPart = url.substring(pos + 1);
         } else {
             lastIdPart = url;
@@ -299,9 +308,10 @@ public class ConfigTaskCreator
     }
 
     private static final List<String> EXTENSIONS = Arrays.asList(".config", ".properties", ".cfg", ".cfg.json");
+
     private static String removeConfigExtension(final String id) {
-        for(final String ext : EXTENSIONS) {
-            if ( id.endsWith(ext) ) {
+        for (final String ext : EXTENSIONS) {
+            if (id.endsWith(ext)) {
                 return id.substring(0, id.length() - ext.length());
             }
         }

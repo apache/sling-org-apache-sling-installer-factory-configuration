@@ -29,8 +29,7 @@ public class ConfigRemoveTask extends AbstractConfigTask {
 
     private static final String CONFIG_REMOVE_ORDER = "10-";
 
-    public ConfigRemoveTask(final TaskResourceGroup r,
-            final ConfigurationAdmin configAdmin) {
+    public ConfigRemoveTask(final TaskResourceGroup r, final ConfigurationAdmin configAdmin) {
         super(r, configAdmin);
     }
 
@@ -44,16 +43,23 @@ public class ConfigRemoveTask extends AbstractConfigTask {
      */
     @Override
     public void execute(final InstallationContext ctx) {
-        synchronized ( Coordinator.SHARED ) {
+        synchronized (Coordinator.SHARED) {
             try {
-                Configuration cfg = ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
+                Configuration cfg =
+                        ConfigUtil.getConfiguration(this.getConfigurationAdmin(), this.factoryPid, this.configPid);
                 if (cfg == null) {
-                    this.getLogger().debug("Cannot delete config , pid={} not found, ignored ({})", getRealPID(), getResource());
+                    this.getLogger()
+                            .debug(
+                                    "Cannot delete config , pid={} not found, ignored ({})",
+                                    getRealPID(),
+                                    getResource());
                 } else {
-                    if ( !ConfigUtil.isSameData(cfg.getProperties(), this.getResource().getDictionary()) ) {
+                    if (!ConfigUtil.isSameData(
+                            cfg.getProperties(), this.getResource().getDictionary())) {
                         this.getLogger().debug("Configuration has changed after it has been installed!");
                     } else {
-                        final Coordinator.Operation op = new Coordinator.Operation(cfg.getPid(), cfg.getFactoryPid(), true);
+                        final Coordinator.Operation op =
+                                new Coordinator.Operation(cfg.getPid(), cfg.getFactoryPid(), true);
 
                         this.getLogger().debug("Deleting config {} ({})", getRealPID(), getResource());
                         cfg.delete();
@@ -63,7 +69,11 @@ public class ConfigRemoveTask extends AbstractConfigTask {
                     }
                 }
             } catch (final Exception e) {
-                this.getLogger().debug("Exception during removal of config " + this.getResource() + " : " + e.getMessage() + ". Retrying later.", e);
+                this.getLogger()
+                        .debug(
+                                "Exception during removal of config " + this.getResource() + " : " + e.getMessage()
+                                        + ". Retrying later.",
+                                e);
             }
             // we always set to uninstalled as the resource really has been deleted
             this.setFinishedState(ResourceState.UNINSTALLED);

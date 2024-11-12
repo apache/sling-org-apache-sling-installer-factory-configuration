@@ -39,51 +39,53 @@ public class MetatypeHandler {
         this.srv = mts;
         this.bundleContext = bundleContext;
     }
-    
-    public void updateConfiguration(final String factoryPid,
+
+    public void updateConfiguration(
+            final String factoryPid,
             final String pid,
-            final Dictionary<String, Object> props, 
+            final Dictionary<String, Object> props,
             final Dictionary<String, Object> defaultProps) {
         // search metatype
         final ObjectClassDefinition ocd;
-        if ( factoryPid != null ) {
-            ocd = this.getObjectClassDefinition( factoryPid );
+        if (factoryPid != null) {
+            ocd = this.getObjectClassDefinition(factoryPid);
         } else {
-            ocd = this.getObjectClassDefinition(  pid );
+            ocd = this.getObjectClassDefinition(pid);
         }
 
-        if ( ocd != null ) {
-            for(final AttributeDefinition ad : ocd.getAttributeDefinitions(ObjectClassDefinition.ALL)) {
+        if (ocd != null) {
+            for (final AttributeDefinition ad : ocd.getAttributeDefinitions(ObjectClassDefinition.ALL)) {
                 final String propName = ad.getID();
                 final Object newValue = props.get(propName);
-                if ( newValue != null 
-                        && (defaultProps == null || defaultProps.get(propName) == null) ) {
-                    if ( ad.getCardinality() == 0 ) {
-                        if ( !shouldSet(ad, newValue.toString())) {
-                            props.remove(propName);                            
+                if (newValue != null && (defaultProps == null || defaultProps.get(propName) == null)) {
+                    if (ad.getCardinality() == 0) {
+                        if (!shouldSet(ad, newValue.toString())) {
+                            props.remove(propName);
                         }
                     } else {
-                        final String[] array = Converters.standardConverter().convert(newValue).to(String[].class);
-                        if ( !shouldSet(ad, array)) {
+                        final String[] array =
+                                Converters.standardConverter().convert(newValue).to(String[].class);
+                        if (!shouldSet(ad, array)) {
                             props.remove(propName);
-                        }                        
-                    }        
+                        }
+                    }
                 }
             }
         }
     }
 
-    private ObjectClassDefinition getObjectClassDefinition( final String pid ) {
-        for(final Bundle b : this.bundleContext.getBundles()) {
+    private ObjectClassDefinition getObjectClassDefinition(final String pid) {
+        for (final Bundle b : this.bundleContext.getBundles()) {
             try {
-                final MetaTypeInformation mti = this.srv.getMetaTypeInformation( b );
-                if ( mti != null ) {
-                    final ObjectClassDefinition ocd = mti.getObjectClassDefinition( pid, null );;
-                    if ( ocd != null ) {
+                final MetaTypeInformation mti = this.srv.getMetaTypeInformation(b);
+                if (mti != null) {
+                    final ObjectClassDefinition ocd = mti.getObjectClassDefinition(pid, null);
+                    ;
+                    if (ocd != null) {
                         return ocd;
                     }
                 }
-            } catch ( final IllegalArgumentException iae ) {
+            } catch (final IllegalArgumentException iae) {
                 // ignore
             }
         }
@@ -91,25 +93,24 @@ public class MetatypeHandler {
     }
 
     boolean shouldSet(final AttributeDefinition ad, final String value) {
-        if ( value.isEmpty() && ad.getDefaultValue() == null ) {
+        if (value.isEmpty() && ad.getDefaultValue() == null) {
             return false;
         }
-        if ( ad.getDefaultValue() != null && value.equals(ad.getDefaultValue()[0]) ) {
+        if (ad.getDefaultValue() != null && value.equals(ad.getDefaultValue()[0])) {
             return false;
         }
         return true;
     }
 
     boolean shouldSet(final AttributeDefinition ad, final String[] values) {
-        if ( ad.getDefaultValue() == null ) {
-            if ( values.length == 0 || (values.length == 1 && values[0].isEmpty() ) ) {
+        if (ad.getDefaultValue() == null) {
+            if (values.length == 0 || (values.length == 1 && values[0].isEmpty())) {
                 return false;
             }
         }
-        if ( ad.getDefaultValue() != null && Arrays.equals(ad.getDefaultValue(), values) ) {
+        if (ad.getDefaultValue() != null && Arrays.equals(ad.getDefaultValue(), values)) {
             return false;
         }
         return true;
     }
-
 }

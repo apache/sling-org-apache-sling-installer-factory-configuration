@@ -48,9 +48,7 @@ public class ConfigUpdateHandler implements ResourceUpdater {
 
     private final ServicesListener activator;
 
-
-    public ConfigUpdateHandler(final ConfigurationAdmin configAdmin,
-            final ServicesListener activator) {
+    public ConfigUpdateHandler(final ConfigurationAdmin configAdmin, final ServicesListener activator) {
         this.configAdmin = configAdmin;
         this.activator = activator;
     }
@@ -60,30 +58,33 @@ public class ConfigUpdateHandler implements ResourceUpdater {
         props.put(Constants.SERVICE_DESCRIPTION, "Apache Sling Configuration Install Task Factory Update Handler");
         props.put(Constants.SERVICE_VENDOR, ServicesListener.VENDOR);
 
-        final String [] serviceInterfaces = {
-                ResourceUpdater.class.getName()
-        };
+        final String[] serviceInterfaces = {ResourceUpdater.class.getName()};
         return bundleContext.registerService(serviceInterfaces, this, props);
     }
 
     @Override
     public void update(final Collection<UpdatableResourceGroup> groups) {
-        for(final UpdatableResourceGroup group : groups) {
+        for (final UpdatableResourceGroup group : groups) {
             update(group);
         }
         this.activator.finishedUpdating();
     }
 
     private void update(final UpdatableResourceGroup group) {
-        if ( this.activator.isActive() ) {
+        if (this.activator.isActive()) {
             // check if the group handles configurations and has an alias (aka factory config)
-            if ( InstallableResource.TYPE_CONFIG.equals(group.getResourceType()) ) {
-                if(group.getAlias() == null && group.getId().contains("~") && group.getId().contains("-")){
+            if (InstallableResource.TYPE_CONFIG.equals(group.getResourceType())) {
+                if (group.getAlias() == null
+                        && group.getId().contains("~")
+                        && group.getId().contains("-")) {
                     // new format config with ~ as separator, cleanup if duplicate old format config exists
                     this.cleanupDuplicateFactoryConfig(group);
                 } else {
                     if (group.getAlias() != null || group.getId().contains("-")) {
-                        this.logger.debug("Configuration going under updation is : {} with alias : {}", group.getId(), group.getAlias());
+                        this.logger.debug(
+                                "Configuration going under updation is : {} with alias : {}",
+                                group.getId(),
+                                group.getAlias());
                         this.updateFactoryConfig(group);
                     }
                 }
@@ -100,8 +101,8 @@ public class ConfigUpdateHandler implements ResourceUpdater {
             if (alias.startsWith(oldId)) {
                 final int lastDotIndex = oldId.length();
                 final String factoryIdString = alias.substring(0, lastDotIndex + 1); // keep it +1 to have last dot
-                                                                                     // intact so that we always have
-                                                                                     // even dots in the string
+                // intact so that we always have
+                // even dots in the string
                 factoryPid = alias.substring(0, getMiddleDotSplitIndex(factoryIdString));
                 pid = alias.substring(lastDotIndex + 1);
 
@@ -117,21 +118,24 @@ public class ConfigUpdateHandler implements ResourceUpdater {
                 pid = oldId.substring(factoryPid.length() + 1);
             }
         } else {
-            // extract factory id for these cases where alias is not available and factoryId and pid need to be separated from the old id string itself
-            //format assumption ::: "factory_pid.factory_pid.pid"
-            // split pid with lastIndexOf('.') then remove the duplicate factory_pid part from the remaining string using the middle dot split index
+            // extract factory id for these cases where alias is not available and factoryId and pid need to be
+            // separated from the old id string itself
+            // format assumption ::: "factory_pid.factory_pid.pid"
+            // split pid with lastIndexOf('.') then remove the duplicate factory_pid part from the remaining string
+            // using the middle dot split index
             final int lastDotIndex = oldId.lastIndexOf('.');
-            if(lastDotIndex < 0) { //when oldId does not contain any dot
+            if (lastDotIndex < 0) { // when oldId does not contain any dot
                 factoryPid = oldId;
             } else {
-                final String factoryIdString = oldId.substring(0, lastDotIndex + 1); // keep it +1 to have last dot intact
-                                                                                      // so that we always have even dots in the string
+                final String factoryIdString =
+                        oldId.substring(0, lastDotIndex + 1); // keep it +1 to have last dot intact
+                // so that we always have even dots in the string
                 factoryPid = oldId.substring(0, getMiddleDotSplitIndex(factoryIdString));
             }
-            pid = oldId.substring(lastDotIndex+1);
+            pid = oldId.substring(lastDotIndex + 1);
         }
 
-        return new String[] { factoryPid, pid };
+        return new String[] {factoryPid, pid};
     }
 
     private int getMiddleDotSplitIndex(final String strId) {
@@ -139,14 +143,13 @@ public class ConfigUpdateHandler implements ResourceUpdater {
         int dotCount = 0;
         int[] dotIndexArray = new int[strId.length()];
 
-        for (int i=0;i<strId.length();i++)
-
+        for (int i = 0; i < strId.length(); i++)
             if (strId.charAt(i) == '.') {
                 dotCount++;
                 dotIndexArray[dotCount] = i;
             }
 
-        return dotIndexArray[dotCount/2]; // get the middle dot index
+        return dotIndexArray[dotCount / 2]; // get the middle dot index
     }
 
     private void updateFactoryConfig(final UpdatableResourceGroup group) {
@@ -167,7 +170,7 @@ public class ConfigUpdateHandler implements ResourceUpdater {
         this.logger.debug("Updating factory configuration from {} to {}", oldId, newId);
         try {
             final Configuration cfg = ConfigUtil.getLegacyFactoryConfig(this.configAdmin, factoryPid, alias, pid);
-            if ( cfg != null ) {
+            if (cfg != null) {
                 // keep existing values / location
                 final String location = cfg.getBundleLocation();
                 final Dictionary<String, Object> dict = ConfigUtil.cleanConfiguration(cfg.getProperties());
@@ -177,26 +180,27 @@ public class ConfigUpdateHandler implements ResourceUpdater {
                 final Configuration upCfg = this.configAdmin.getFactoryConfiguration(factoryPid, pid, location);
                 upCfg.update(dict);
             }
-        } catch ( final IOException | InvalidSyntaxException io) {
+        } catch (final IOException | InvalidSyntaxException io) {
             // ignore for now
         }
         group.update();
     }
 
     private void cleanupDuplicateFactoryConfig(final UpdatableResourceGroup group) {
-            final String newPid = group.getId();
-            final int indexOfSeparator = newPid.lastIndexOf('~');
-            final String pid = newPid.substring(indexOfSeparator+1);
-            final String factoryPid = newPid.substring(0,indexOfSeparator);
-            try {
-                final Configuration cfg = ConfigUtil.getLegacyFactoryConfig(this.configAdmin, factoryPid, null, pid);
-                if ( cfg != null ) {
-                    this.logger.debug("Duplicate configuration being cleaned up is : {}",cfg.getFactoryPid() + '.' + cfg.getPid());
-                    // delete old factory configuration
-                    cfg.delete();
-                }
+        final String newPid = group.getId();
+        final int indexOfSeparator = newPid.lastIndexOf('~');
+        final String pid = newPid.substring(indexOfSeparator + 1);
+        final String factoryPid = newPid.substring(0, indexOfSeparator);
+        try {
+            final Configuration cfg = ConfigUtil.getLegacyFactoryConfig(this.configAdmin, factoryPid, null, pid);
+            if (cfg != null) {
+                this.logger.debug(
+                        "Duplicate configuration being cleaned up is : {}", cfg.getFactoryPid() + '.' + cfg.getPid());
+                // delete old factory configuration
+                cfg.delete();
+            }
 
-        } catch ( final IOException | InvalidSyntaxException io) {
+        } catch (final IOException | InvalidSyntaxException io) {
             // ignore for now
         }
     }

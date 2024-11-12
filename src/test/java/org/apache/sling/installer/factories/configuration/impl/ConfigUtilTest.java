@@ -18,10 +18,6 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -31,9 +27,14 @@ import org.mockito.Mockito;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 public class ConfigUtilTest {
 
-    @Test public void testIsSameDataEmptyAndNullDictionaries() throws Exception {
+    @Test
+    public void testIsSameDataEmptyAndNullDictionaries() throws Exception {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
@@ -44,7 +45,8 @@ public class ConfigUtilTest {
         assertFalse(ConfigUtil.isSameData(b, null));
     }
 
-    @Test public void testIsSameDataSameDictionaries() throws Exception {
+    @Test
+    public void testIsSameDataSameDictionaries() throws Exception {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
@@ -55,7 +57,7 @@ public class ConfigUtilTest {
         a.put("e", 1.1);
 
         final Enumeration<String> e = a.keys();
-        while ( e.hasMoreElements() ) {
+        while (e.hasMoreElements()) {
             final String name = e.nextElement();
             b.put(name, a.get(name));
         }
@@ -64,7 +66,7 @@ public class ConfigUtilTest {
         assertTrue(ConfigUtil.isSameData(b, a));
 
         final Enumeration<String> e1 = a.keys();
-        while ( e1.hasMoreElements() ) {
+        while (e1.hasMoreElements()) {
             final String name = e1.nextElement();
             b.put(name, a.get(name).toString());
         }
@@ -73,59 +75,61 @@ public class ConfigUtilTest {
         assertTrue(ConfigUtil.isSameData(b, a));
     }
 
-    @Test public void testIsSameDataArrays() throws Exception {
+    @Test
+    public void testIsSameDataArrays() throws Exception {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
         a.put("a", new String[] {"1", "2", "3"});
         b.put("a", a.get("a"));
 
-        a.put("b", new Integer[] {1,2,3});
+        a.put("b", new Integer[] {1, 2, 3});
         b.put("b", a.get("b"));
 
-        a.put("c", new Long[] {1L,2L,3L});
+        a.put("c", new Long[] {1L, 2L, 3L});
         b.put("c", a.get("c"));
 
-        a.put("d", new Integer[] {1,2,3});
+        a.put("d", new Integer[] {1, 2, 3});
         b.put("d", new String[] {"1", "2", "3"});
 
         assertTrue(ConfigUtil.isSameData(a, b));
         assertTrue(ConfigUtil.isSameData(b, a));
     }
 
-    @Test public void testIsSameDataWithPrimitiveArrays() throws Exception {
+    @Test
+    public void testIsSameDataWithPrimitiveArrays() throws Exception {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
-        a.put("b", new int[] {1,2,3});
+        a.put("b", new int[] {1, 2, 3});
         b.put("b", a.get("b"));
 
-        a.put("c", new long[] {1L,2L,3L});
+        a.put("c", new long[] {1L, 2L, 3L});
         b.put("c", a.get("c"));
 
-        a.put("d", new int[] {1,2,3});
+        a.put("d", new int[] {1, 2, 3});
         b.put("d", new String[] {"1", "2", "3"});
 
         assertTrue(ConfigUtil.isSameData(a, b));
         assertTrue(ConfigUtil.isSameData(b, a));
     }
 
-    @Test public void testGetOrCreateConfiguration() throws Exception {
+    @Test
+    public void testGetOrCreateConfiguration() throws Exception {
         Configuration c1 = Mockito.mock(Configuration.class);
         ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
-        Mockito.when(cm.listConfigurations(
-                "(&(service.factoryPid=a.b.c)(service.pid=a.b.c~c1))"))
+        Mockito.when(cm.listConfigurations("(&(service.factoryPid=a.b.c)(service.pid=a.b.c~c1))"))
                 .thenReturn(new Configuration[] {c1});
         Configuration cfg = ConfigUtil.getConfiguration(cm, "a.b.c", "c1");
         assertSame(c1, cfg);
     }
-    
 
-    @Test public void testIsSameDataWithSwitchFromArrayToSingleValue() throws Exception {
+    @Test
+    public void testIsSameDataWithSwitchFromArrayToSingleValue() throws Exception {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
-        a.put("b", new int[] {1,2,3});
+        a.put("b", new int[] {1, 2, 3});
         b.put("b", 1);
 
         assertFalse(ConfigUtil.isSameData(a, b));
