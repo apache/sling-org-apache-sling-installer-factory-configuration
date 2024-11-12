@@ -120,10 +120,6 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         }
         
         MetatypeHandler metatypeHandler = new MetatypeHandler(metatypeService, bundleContext);
-        Dictionary<String, Object> mergedProperties = ConfigTaskCreator.getDefaultProperties(infoProvider, pid);
-        if (mergedProperties == null) {
-            mergedProperties = new Hashtable<>();
-        }
         ConfigurationSerializerFactory.Format serializationFormat = Format.JSON;
         if (format != null && !format.trim().isEmpty()) {
             try {
@@ -230,8 +226,11 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             tr(pw);
             tdLabel(pw, "Serialized Configuration Properties");
             tdContent(pw);
-            
             Configuration configuration = configurationAdmin.getConfiguration(pid, null);
+            Dictionary<String, Object> mergedProperties = ConfigTaskCreator.getDefaultProperties(infoProvider, pid);
+            if (mergedProperties == null) {
+                mergedProperties = new Hashtable<>();
+            }
             Dictionary<String, Object> properties = configuration.getProperties();
             if (properties == null) {
                 pw.print("<p class='ui-state-error-text'>");
