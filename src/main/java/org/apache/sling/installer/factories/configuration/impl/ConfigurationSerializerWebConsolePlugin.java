@@ -258,7 +258,9 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
                     if (removeMergedDefaultProperties) {
                         ConfigUtil.removeRedundantProperties(properties, mergedProperties);
                     }
-                    ConfigurationSerializerFactory.create(serializationFormat).serialize(properties, baos);
+                    // always emit in alphabetical order of keys
+                    ConfigurationSerializerFactory.create(serializationFormat)
+                            .serialize(new SortedDictionary<>(properties), baos);
                     pw.println("<textarea rows=\"20\" cols=\"120\" id=\"output\" readonly>");
                     pw.print(new String(baos.toByteArray(), StandardCharsets.UTF_8));
                     pw.println("</textarea>");
