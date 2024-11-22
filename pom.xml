@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>61</version>
+        <version>62</version>
         <relativePath />
     </parent>
 
@@ -76,6 +76,12 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.component</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- transitive dependency of DS 1.4-->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.dto</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

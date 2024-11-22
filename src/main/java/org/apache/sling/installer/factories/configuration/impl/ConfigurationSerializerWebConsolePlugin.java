@@ -27,27 +27,26 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.serializer.ConfigurationSerializerFactory;
 import org.apache.sling.installer.api.serializer.ConfigurationSerializerFactory.Format;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.runtime.ServiceComponentRuntime;
 import org.osgi.service.component.runtime.dto.ComponentDescriptionDTO;
-import org.osgi.service.metatype.MetaTypeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +66,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     private static final String RES_LOC = LABEL + "/res/ui/";
     private static final String PARAMETER_PID = "pid";
     private static final String PARAMETER_FORMAT = "format";
-    private static final String PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES = "removeComponentDefaultProps";
-    private static final String PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES = "removeMetatypeDefaultProps";
-    private static final String PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES = "removeMergedDefaultProps";
+    private static final String PARAMETER_HIDE_REDUNDANT_PROPERTIES = "hideRedundantProperties";
 
     /** The logger */
     private final Logger LOGGER = LoggerFactory.getLogger(ConfigurationSerializerWebConsolePlugin.class);
@@ -78,51 +75,21 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     ConfigurationAdmin configurationAdmin;
 
     @Reference
-    MetaTypeService metatypeService;
-
-    @Reference
     private InfoProvider infoProvider;
 
     @Reference
     private ServiceComponentRuntime scr;
 
-    private final BundleContext bundleContext;
-
-    @Activate
-    public ConfigurationSerializerWebConsolePlugin(BundleContext bundleContext) {
-        this.bundleContext = bundleContext;
-    }
-
     @Override
     public void service(final ServletRequest request, final ServletResponse response) throws IOException {
-
         final String pid = request.getParameter(PARAMETER_PID);
+        final Configuration configuration;
+        if (pid != null && !pid.trim().isEmpty()) {
+            configuration = configurationAdmin.getConfiguration(pid, null);
+        } else {
+            configuration = null;
+        }
         final String format = request.getParameter(PARAMETER_FORMAT);
-        // initial loading
-        final boolean removeMetatypeDefaultProperties;
-        final boolean removeComponentDefaultProperties;
-        final boolean removeMergedDefaultProperties;
-        // initial loading?
-        if (format == null) {
-            removeMetatypeDefaultProperties = true;
-            removeComponentDefaultProperties = true;
-            removeMergedDefaultProperties = true;
-        } else {
-            removeMetatypeDefaultProperties =
-                    Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES));
-            removeComponentDefaultProperties =
-                    Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES));
-            removeMergedDefaultProperties =
-                    Boolean.parseBoolean(request.getParameter(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES));
-        }
-        Collection<ComponentDescriptionDTO> allComponentDescriptions;
-        if (removeComponentDefaultProperties) {
-            allComponentDescriptions = scr.getComponentDescriptionDTOs();
-        } else {
-            allComponentDescriptions = Collections.emptyList();
-        }
-
-        MetatypeHandler metatypeHandler = new MetatypeHandler(metatypeService, bundleContext);
         ConfigurationSerializerFactory.Format serializationFormat = Format.JSON;
         if (format != null && !format.trim().isEmpty()) {
             try {
@@ -131,7 +98,31 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
                 LOGGER.warn("Illegal parameter 'format' given, falling back to default '{}'", serializationFormat, e);
             }
         }
-        final PrintWriter pw = response.getWriter();
+        final boolean hideRedundantProperties;
+        if (format == null) {
+            hideRedundantProperties = true;
+        } else {
+            hideRedundantProperties = Boolean.parseBoolean(request.getParameter(PARAMETER_HIDE_REDUNDANT_PROPERTIES));
+        }
+        dumpConfiguration(configuration, serializationFormat, hideRedundantProperties, response.getWriter());
+    }
+
+    private void dumpConfiguration(
+            Configuration configuration,
+            ConfigurationSerializerFactory.Format serializationFormat,
+            boolean hideRedundantProperties,
+            PrintWriter pw) {
+        // map with key = configuration pid and value = Set<ComponentDescriptionDTO>
+        Map<String, Set<ComponentDescriptionDTO>> allComponentDescriptions = new HashMap<>();
+        String pid = configuration != null ? configuration.getPid() : "";
+        scr.getComponentDescriptionDTOs().stream().forEach(dto -> {
+            for (String configPid : dto.configurationPid) {
+                // the same PID might be bound to multiple component descriptions
+                allComponentDescriptions
+                        .computeIfAbsent(configPid, k -> new HashSet<ComponentDescriptionDTO>())
+                        .add(dto);
+            }
+        });
 
         pw.println("<script type=\"text/javascript\" src=\"" + RES_LOC + "clipboard.js\"></script>");
         pw.print("<form method='get'>");
@@ -146,66 +137,75 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         tdLabel(pw, "PID");
         tdContent(pw);
 
-        pw.print("<input type='text' name='");
-        pw.print(PARAMETER_PID);
-        pw.print("' value='");
-        if (pid != null) {
-            pw.print(escapeXml(pid));
-        }
-
-        pw.println("' class='input' size='120' minlength='3'>");
+        pw.printf(
+                "<input type='text' name='%s' ' value='%s' class='input' size='120' minlength='3'>",
+                PARAMETER_PID, escapeXml(pid));
+        pw.println();
+        pw.println(
+                "<p>For factory configurations use the factory PID followed by a tilde and the configuration name, e.g. 'my.factory.pid~myname'</p>");
         closeTd(pw);
         closeTr(pw);
 
         tr(pw);
-        tdLabel(pw, "Remove Properties");
+
+        tdLabel(pw, "Hide Properties");
         tdContent(pw);
 
-        pw.print("<input type='checkbox' name='");
-        pw.print(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES);
-        pw.print("'");
-        if (removeMetatypeDefaultProperties) {
+        pw.append("<input type='checkbox' name='");
+        pw.append(PARAMETER_HIDE_REDUNDANT_PROPERTIES);
+        pw.append("'");
+        if (hideRedundantProperties) {
             pw.print(" checked");
         }
 
-        pw.println(" id='");
-        pw.print(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES);
-        pw.println("' class='input' value='true'>");
-        pw.println("<label for='");
-        pw.println(PARAMETER_REMOVE_METATYPE_DEFAULT_PROPERTIES);
-        pw.println("'>Metatype Default Properties</label>");
-
-        pw.print("<input type='checkbox' name='");
-        pw.print(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES);
-        pw.print("'");
-        if (removeComponentDefaultProperties) {
-            pw.print(" checked");
+        pw.append(" id='");
+        pw.append(PARAMETER_HIDE_REDUNDANT_PROPERTIES);
+        pw.append("' class='input' value='true'>").println();
+        pw.append("<label for='");
+        pw.append(PARAMETER_HIDE_REDUNDANT_PROPERTIES);
+        pw.append("'>");
+        pw.append("Redundant Properties (");
+        StringBuilder sb = new StringBuilder();
+        // these configs come from inherited sources
+        Dictionary<String, Object> mergedProperties = ConfigTaskCreator.getDefaultProperties(infoProvider, pid);
+        if (mergedProperties == null) {
+            mergedProperties = new Hashtable<>();
         }
-
-        pw.println(" id='");
-        pw.print(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES);
-        pw.println("' class='input' value='true'>");
-        pw.println("<label for='");
-        pw.println(PARAMETER_REMOVE_COMPONENT_DEFAULT_PROPERTIES);
-        pw.println("'>Declarative Services Component Properties</label>");
-
-        if (Activator.MERGE_SCHEMES != null) {
-            pw.print("<input type='checkbox' name='");
-            pw.print(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES);
-            pw.print("'");
-            if (removeMergedDefaultProperties) {
-                pw.print(" checked");
+        if (mergedProperties.size() > 0) {
+            sb.append(
+                    "from <a href=\"https://sling.apache.org/documentation/bundles/configuration-installer-factory.html#merging-of-configurations\">Merge Schemes</a> ");
+            sb.append("\"").append(String.join(", ", Activator.MERGE_SCHEMES)).append("\"");
+        }
+        final String pidReferencedFromComponentDescription;
+        if (configuration != null) {
+            pidReferencedFromComponentDescription =
+                    configuration.getFactoryPid() != null ? configuration.getFactoryPid() : configuration.getPid();
+            Set<ComponentDescriptionDTO> componentDescriptions =
+                    allComponentDescriptions.get(pidReferencedFromComponentDescription);
+            if (componentDescriptions != null) {
+                if (sb.length() > 0) {
+                    sb.append(" and ");
+                }
+                sb.append("from component description(s) of ");
+                sb.append(componentDescriptions.stream()
+                        .map(componentDescription -> String.format(
+                                "<a href=\"components/%d/%s/%s\">component \"%s\" (bundle %d)</a>",
+                                componentDescription.bundle.id,
+                                componentDescription.name,
+                                componentDescription.configurationPid[0],
+                                componentDescription.name,
+                                componentDescription.bundle.id))
+                        .collect(Collectors.joining(", ")));
             }
-
-            pw.println(" id='");
-            pw.print(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES);
-            pw.println("' class='input' value='true'>");
-            pw.println("<label for='");
-            pw.println(PARAMETER_REMOVE_MERGED_DEFAULT_PROPERTIES);
-            pw.println("'>Merged Properties</label>");
+        } else {
+            pidReferencedFromComponentDescription = "";
         }
+        if (sb.length() == 0) {
+            sb.append("no fallback sources found");
+        }
+        pw.append(sb.toString()).append(")</label>").println();
         pw.println(
-                "<p>Selecting any of these options strips those properties which have the same name and value as one from any of the selected sources. The removed properties are very likely being redundant and therefore do not need to be added to serialized configs.</a>");
+                "<p>Enabling it hides those properties which have the same name and value as any of their fallback values.</p>");
         closeTd(pw);
         closeTr(pw);
 
@@ -215,10 +215,10 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         pw.print("<select name='");
         pw.print(PARAMETER_FORMAT);
         pw.println("'>");
-        option(pw, "JSON", "OSGi Configurator JSON", format);
-        option(pw, "CONFIG", "Apache Felix Config", format);
-        option(pw, "PROPERTIES", "Java Properties", format);
-        option(pw, "PROPERTIES_XML", "Java Properties (XML)", format);
+        option(pw, "JSON", "OSGi Configurator JSON", serializationFormat.name());
+        option(pw, "CONFIG", "Apache Felix Config", serializationFormat.name());
+        option(pw, "PROPERTIES", "Java Properties", serializationFormat.name());
+        option(pw, "PROPERTIES_XML", "Java Properties (XML)", serializationFormat.name());
         pw.println("</select>");
 
         pw.println("&nbsp;&nbsp;<input type='submit' value='Print' class='submit'>");
@@ -226,15 +226,11 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         closeTd(pw);
         closeTr(pw);
 
-        if (pid != null && !pid.trim().isEmpty()) {
+        if (configuration != null) {
             tr(pw);
             tdLabel(pw, "Serialized Configuration Properties");
             tdContent(pw);
-            Configuration configuration = configurationAdmin.getConfiguration(pid, null);
-            Dictionary<String, Object> mergedProperties = ConfigTaskCreator.getDefaultProperties(infoProvider, pid);
-            if (mergedProperties == null) {
-                mergedProperties = new Hashtable<>();
-            }
+
             Dictionary<String, Object> properties = configuration.getProperties();
             if (properties == null) {
                 pw.print("<p class='ui-state-error-text'>");
@@ -242,22 +238,16 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
                 pw.println("</p>");
             } else {
                 properties = ConfigUtil.cleanConfiguration(properties);
+                if (hideRedundantProperties) {
+                    removeComponentDefaultProperties(
+                            allComponentDescriptions,
+                            pidReferencedFromComponentDescription,
+                            properties,
+                            mergedProperties);
+                    ConfigUtil.removeRedundantProperties(properties, mergedProperties);
+                }
+
                 try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                    if (removeMetatypeDefaultProperties) {
-                        metatypeHandler.updateConfiguration(
-                                configuration.getFactoryPid(), configuration.getPid(), properties, mergedProperties);
-                    }
-                    if (removeComponentDefaultProperties) {
-                        removeComponentDefaultProperties(
-                                allComponentDescriptions,
-                                configuration.getPid(),
-                                configuration.getFactoryPid(),
-                                properties,
-                                mergedProperties);
-                    }
-                    if (removeMergedDefaultProperties) {
-                        ConfigUtil.removeRedundantProperties(properties, mergedProperties);
-                    }
                     // always emit in alphabetical order of keys
                     ConfigurationSerializerFactory.create(serializationFormat)
                             .serialize(new SortedDictionary<>(properties), baos);
@@ -275,7 +265,6 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             closeTd(pw);
             closeTr(pw);
         }
-
         pw.println("</table>");
         pw.print("</form>");
     }
@@ -362,34 +351,39 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     }
 
     /**
-     * Removes all configuration properties from the given dictionary whose values are equal to all connected DS component properties set in the descriptor
+     * Removes all configuration properties from the given dictionary whose values are equal to all connected DS component properties set in the component description
      * and which are not set in the merged (i.e. inherited) properties.
-     * @param componentDescriptions
-     * @param pid
-     * @param factoryPid
-     * @param dict
-     * @param mergedProperties
+     * @param allComponentDescriptions
+     * @param pidReferencedFromComponentDescription The PID referenced in the component description
+     * @param properties all properties of the configuration (is potentially modified through this method)
+     * @param mergedProperties the merged/inherited properties from some other OSGi installer resource
      */
     private void removeComponentDefaultProperties(
-            final Collection<ComponentDescriptionDTO> componentDescriptions,
-            final String pid,
-            final String factoryPid,
-            final Dictionary<String, Object> dict,
+            final Map<String, Set<ComponentDescriptionDTO>> allComponentDescriptions,
+            final String pidReferencedFromComponentDescription,
+            final Dictionary<String, Object> properties,
             final Dictionary<String, Object> mergedProperties) {
-        String effectivePid = factoryPid != null ? factoryPid : pid;
-        Collection<ComponentDescriptionDTO> relevantComponentDescriptions = componentDescriptions.stream()
-                // find all with a matching pid
-                .filter(c -> Arrays.asList(c.configurationPid).contains(effectivePid))
-                .collect(Collectors.toList());
+        Set<ComponentDescriptionDTO> componentDescriptions =
+                allComponentDescriptions.get(pidReferencedFromComponentDescription);
 
-        final Enumeration<String> e = dict.keys();
+        final Enumeration<String> e = properties.keys();
         while (e.hasMoreElements()) {
             final String key = e.nextElement();
-            final Object newValue = dict.get(key);
-            if (relevantComponentDescriptions.stream()
-                    .allMatch(c -> ConfigUtil.isSameValue(newValue, c.properties.get(key))
-                            && mergedProperties.get(key) == null)) {
-                dict.remove(key);
+            final Object newValue = properties.get(key);
+            if (componentDescriptions != null) {
+                // check all bound component descriptions
+                Set<Object> defaultValues = componentDescriptions.stream()
+                        .map(dto -> dto.properties.get(key))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                if (defaultValues.size() != 1) {
+                    // if different components have different values for the same key, we cannot remove it
+                    continue;
+                }
+                Object defaultValue = defaultValues.iterator().next();
+                if (ConfigUtil.isSameValue(newValue, defaultValue) && mergedProperties.get(key) == null) {
+                    properties.remove(key);
+                }
             }
         }
     }
