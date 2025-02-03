@@ -205,7 +205,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         }
         pw.append(sb.toString()).append(")</label>").println();
         pw.println(
-                "<p>Enabling it hides those properties which have the same name and value as any of their fallback values.</p>");
+                "<p>Enabling it hides those properties which have the same name and value as any of their fallback sources.</p>");
         closeTd(pw);
         closeTr(pw);
 
