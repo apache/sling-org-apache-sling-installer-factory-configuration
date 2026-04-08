@@ -22,19 +22,19 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigUtilTest {
+class ConfigUtilTest {
 
     @Test
-    public void testIsSameDataEmptyAndNullDictionaries() throws Exception {
+    void testIsSameDataEmptyAndNullDictionaries() {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
@@ -46,7 +46,7 @@ public class ConfigUtilTest {
     }
 
     @Test
-    public void testIsSameDataSameDictionaries() throws Exception {
+    void testIsSameDataSameDictionaries() {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
@@ -76,7 +76,7 @@ public class ConfigUtilTest {
     }
 
     @Test
-    public void testIsSameDataArrays() throws Exception {
+    void testIsSameDataArrays() {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
@@ -97,7 +97,7 @@ public class ConfigUtilTest {
     }
 
     @Test
-    public void testIsSameDataWithPrimitiveArrays() throws Exception {
+    void testIsSameDataWithPrimitiveArrays() {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
@@ -115,7 +115,7 @@ public class ConfigUtilTest {
     }
 
     @Test
-    public void testGetOrCreateConfiguration() throws Exception {
+    void testGetOrCreateConfiguration() throws Exception {
         Configuration c1 = Mockito.mock(Configuration.class);
         ConfigurationAdmin cm = Mockito.mock(ConfigurationAdmin.class);
         Mockito.when(cm.listConfigurations("(&(service.factoryPid=a.b.c)(service.pid=a.b.c~c1))"))
@@ -125,7 +125,7 @@ public class ConfigUtilTest {
     }
 
     @Test
-    public void testIsSameDataWithSwitchFromArrayToSingleValue() throws Exception {
+    void testIsSameDataWithSwitchFromArrayToSingleValue() {
         final Dictionary<String, Object> a = new Hashtable<>();
         final Dictionary<String, Object> b = new Hashtable<>();
 
