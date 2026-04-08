@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -31,12 +31,12 @@ import org.osgi.service.metatype.MetaTypeInformation;
 import org.osgi.service.metatype.MetaTypeService;
 import org.osgi.service.metatype.ObjectClassDefinition;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MetatypeHandlerTest {
+class MetatypeHandlerTest {
 
     @Test
-    public void testUpdateConfiguration() throws Exception {
+    void testUpdateConfiguration() {
         final BundleContext bundleContext = Mockito.mock(BundleContext.class);
         final MetaTypeService mts = Mockito.mock(MetaTypeService.class);
         final Bundle bundle = Mockito.mock(Bundle.class);

@@ -22,16 +22,16 @@ import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class SortedDictionaryTest {
+class SortedDictionaryTest {
 
     @Test
-    public void testKeysAndElements() {
+    void testKeysAndElements() {
         Dictionary<String, Object> dictionary = new Hashtable<>();
         dictionary.put("Z", "z");
         dictionary.put("A", "a");
@@ -46,7 +46,7 @@ public class SortedDictionaryTest {
     }
 
     @Test
-    public void testPutGetRemove() {
+    void testPutGetRemove() {
         Dictionary<String, Object> dictionary = new Hashtable<>();
         Dictionary<String, Object> sortedDictionary = new SortedDictionary<>(dictionary);
         sortedDictionary.put("foo", "bar");
@@ -58,7 +58,7 @@ public class SortedDictionaryTest {
     }
 
     @Test
-    public void testDelegatedGetters() {
+    void testDelegatedGetters() {
         Dictionary<String, Object> dictionary = new Hashtable<>();
         dictionary.put("foo", "bar");
         dictionary.put("bar", "baz");
@@ -69,7 +69,7 @@ public class SortedDictionaryTest {
     }
 
     @Test
-    public void testEqualsAndHashcode() {
+    void testEqualsAndHashcode() {
         Dictionary<String, Object> dictionary = new Hashtable<>();
         dictionary.put("foo", "bar");
         dictionary.put("bar", "baz");

@@ -18,11 +18,11 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ConfigUpdateHandlerTest {
+class ConfigUpdateHandlerTest {
 
     private void checkFactoryPid(final String alias, final String oldId, final String factoryId, final String pid) {
         final ConfigUpdateHandler cuh = new ConfigUpdateHandler(null, null);
@@ -32,7 +32,7 @@ public class ConfigUpdateHandlerTest {
     }
 
     @Test
-    public void testGettingFactoryPid() {
+    void testGettingFactoryPid() {
         // normal conversion
         checkFactoryPid(
                 "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment.43e4778d-3e72-460a-9da9-bca80558f1f7",
@@ -64,7 +64,7 @@ public class ConfigUpdateHandlerTest {
     }
 
     @Test
-    public void testDuplicateFactoryPID() {
+    void testDuplicateFactoryPID() {
         checkFactoryPid(
                 "a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig.5a61b4ab-c8c9-4e20-ab3d-b8b7ea12dfca",
                 "a.b.c.MyFactoryConfig.a.b.c.MyFactoryConfig",
