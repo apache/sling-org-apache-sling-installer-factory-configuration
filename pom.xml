@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>62</version>
+        <version>66</version>
         <relativePath />
     </parent>
 
@@ -40,7 +40,8 @@
     </scm>
 
     <properties>
-        <sling.java.version>8</sling.java.version>
+        <sling.java.version>17</sling.java.version>
+        <project.build.outputTimestamp>2023-05-15T10:56:39Z</project.build.outputTimestamp>
     </properties>
 
     <dependencies>
@@ -115,13 +116,11 @@
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.util.converter</artifactId>
-            <version>1.0.8</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.util.function</artifactId>
-            <version>1.0.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -137,7 +136,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.14.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -63,7 +63,7 @@ public class SortedDictionary<K, V> extends Dictionary<K, V> {
     public Enumeration<V> elements() {
         // this needs to be sorted by keys
         Enumeration<K> sortedKeys = keys();
-        Collection<V> sortedValues = new ArrayList<V>();
+        Collection<V> sortedValues = new ArrayList<>();
         while (sortedKeys.hasMoreElements()) {
             K key = sortedKeys.nextElement();
             sortedValues.add(delegate.get(key));
@@ -80,7 +80,7 @@ public class SortedDictionary<K, V> extends Dictionary<K, V> {
         if (this == obj) return true;
         if (obj == null) return false;
         if (getClass() != obj.getClass()) return false;
-        SortedDictionary other = (SortedDictionary) obj;
+        SortedDictionary<?, ?> other = (SortedDictionary<?, ?>) obj;
         return Objects.equals(delegate, other.delegate);
     }
 
