@@ -18,10 +18,6 @@
  */
 package org.apache.sling.installer.factories.configuration.impl;
 
-import javax.servlet.GenericServlet;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -37,9 +33,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.servlet.GenericServlet;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.apache.sling.installer.api.info.InfoProvider;
 import org.apache.sling.installer.api.serializer.ConfigurationSerializerFactory;
 import org.apache.sling.installer.api.serializer.ConfigurationSerializerFactory.Format;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
@@ -51,7 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component(
-        service = javax.servlet.Servlet.class,
+        service = jakarta.servlet.Servlet.class,
         property = {
             Constants.SERVICE_VENDOR + "=The Apache Software Foundation",
             Constants.SERVICE_DESCRIPTION + "=Apache Sling OSGi Installer Configuration Serializer Web Console Plugin",
@@ -69,16 +70,16 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     private static final String PARAMETER_HIDE_REDUNDANT_PROPERTIES = "hideRedundantProperties";
 
     /** The logger */
-    private final Logger LOGGER = LoggerFactory.getLogger(ConfigurationSerializerWebConsolePlugin.class);
+    private final transient Logger logger = LoggerFactory.getLogger(ConfigurationSerializerWebConsolePlugin.class);
 
     @Reference
-    ConfigurationAdmin configurationAdmin;
+    transient ConfigurationAdmin configurationAdmin;
 
     @Reference
-    private InfoProvider infoProvider;
+    private transient InfoProvider infoProvider;
 
     @Reference
-    private ServiceComponentRuntime scr;
+    private transient ServiceComponentRuntime scr;
 
     @Override
     public void service(final ServletRequest request, final ServletResponse response) throws IOException {
@@ -95,7 +96,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             try {
                 serializationFormat = ConfigurationSerializerFactory.Format.valueOf(format);
             } catch (IllegalArgumentException e) {
-                LOGGER.warn("Illegal parameter 'format' given, falling back to default '{}'", serializationFormat, e);
+                logger.warn("Illegal parameter 'format' given, falling back to default '{}'", serializationFormat, e);
             }
         }
         final boolean hideRedundantProperties;
@@ -108,10 +109,10 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
     }
 
     private void dumpConfiguration(
-            Configuration configuration,
-            ConfigurationSerializerFactory.Format serializationFormat,
+            @Nullable Configuration configuration,
+            @NotNull ConfigurationSerializerFactory.Format serializationFormat,
             boolean hideRedundantProperties,
-            PrintWriter pw) {
+            @NotNull PrintWriter pw) {
         // map with key = configuration pid and value = Set<ComponentDescriptionDTO>
         Map<String, Set<ComponentDescriptionDTO>> allComponentDescriptions = new HashMap<>();
         String pid = configuration != null ? configuration.getPid() : "";
@@ -183,7 +184,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
             Set<ComponentDescriptionDTO> componentDescriptions =
                     allComponentDescriptions.get(pidReferencedFromComponentDescription);
             if (componentDescriptions != null) {
-                if (sb.length() > 0) {
+                if (!sb.isEmpty()) {
                     sb.append(" and ");
                 }
                 sb.append("from component description(s) of ");
@@ -200,7 +201,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         } else {
             pidReferencedFromComponentDescription = "";
         }
-        if (sb.length() == 0) {
+        if (sb.isEmpty()) {
             sb.append("no fallback sources found");
         }
         pw.append(sb.toString()).append(")</label>").println();
@@ -259,7 +260,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
                     pw.print("<p class='ui-state-error-text'>");
                     pw.print("Error serializing pid '" + escapeXml(pid) + "': " + e.getMessage());
                     pw.println("</p>");
-                    LOGGER.warn("Error serializing pid '{}'", pid, e);
+                    logger.warn("Error serializing pid '{}'", pid, e);
                 }
             }
             closeTd(pw);
@@ -269,29 +270,33 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         pw.print("</form>");
     }
 
-    private void tdContent(final PrintWriter pw) {
+    private void tdContent(@NotNull final PrintWriter pw) {
         pw.print("<td class='content' colspan='2'>");
     }
 
-    private void closeTd(final PrintWriter pw) {
+    private void closeTd(@NotNull final PrintWriter pw) {
         pw.print("</td>");
     }
 
-    private void closeTr(final PrintWriter pw) {
+    private void closeTr(@NotNull final PrintWriter pw) {
         pw.println("</tr>");
     }
 
-    private void tdLabel(final PrintWriter pw, final String label) {
+    private void tdLabel(@NotNull final PrintWriter pw, @NotNull final String label) {
         pw.print("<td class='content'>");
         pw.print(label);
         pw.println("</td>");
     }
 
-    private void tr(final PrintWriter pw) {
+    private void tr(@NotNull final PrintWriter pw) {
         pw.println("<tr class='content'>");
     }
 
-    private void option(final PrintWriter pw, String value, String label, String selectedValue) {
+    private void option(
+            @NotNull final PrintWriter pw,
+            @NotNull String value,
+            @NotNull String label,
+            @NotNull String selectedValue) {
         pw.print("<option value='");
         pw.print(value);
         pw.print("'");
@@ -303,20 +308,19 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         pw.println("</option>");
     }
 
-    private void titleHtml(final PrintWriter pw, final String title, final String description) {
+    private void titleHtml(
+            @NotNull final PrintWriter pw, @NotNull final String title, @NotNull final String description) {
         tr(pw);
         pw.print("<th colspan='3' class='content container'>");
         pw.print(escapeXml(title));
         pw.println("</th>");
         closeTr(pw);
 
-        if (description != null) {
-            tr(pw);
-            pw.print("<td colspan='3' class='content'>");
-            pw.print(description);
-            pw.println("</th>");
-            closeTr(pw);
-        }
+        tr(pw);
+        pw.print("<td colspan='3' class='content'>");
+        pw.print(description);
+        pw.println("</th>");
+        closeTr(pw);
     }
 
     /**
@@ -325,7 +329,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
      * @param input The input text
      * @return The escaped text
      */
-    protected String escapeXml(final String input) {
+    protected String escapeXml(@Nullable final String input) {
         if (input == null) {
             return null;
         }
@@ -359,18 +363,17 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
      * @param mergedProperties the merged/inherited properties from some other OSGi installer resource
      */
     private void removeComponentDefaultProperties(
-            final Map<String, Set<ComponentDescriptionDTO>> allComponentDescriptions,
-            final String pidReferencedFromComponentDescription,
-            final Dictionary<String, Object> properties,
-            final Dictionary<String, Object> mergedProperties) {
+            @NotNull final Map<String, Set<ComponentDescriptionDTO>> allComponentDescriptions,
+            @NotNull final String pidReferencedFromComponentDescription,
+            @NotNull final Dictionary<String, Object> properties,
+            @NotNull final Dictionary<String, Object> mergedProperties) {
         Set<ComponentDescriptionDTO> componentDescriptions =
                 allComponentDescriptions.get(pidReferencedFromComponentDescription);
-
-        final Enumeration<String> e = properties.keys();
-        while (e.hasMoreElements()) {
-            final String key = e.nextElement();
-            final Object newValue = properties.get(key);
-            if (componentDescriptions != null) {
+        if (componentDescriptions != null) {
+            final Enumeration<String> e = properties.keys();
+            while (e.hasMoreElements()) {
+                final String key = e.nextElement();
+                final Object newValue = properties.get(key);
                 // check all bound component descriptions
                 Set<Object> defaultValues = componentDescriptions.stream()
                         .map(dto -> dto.properties.get(key))
@@ -388,6 +391,7 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
         }
     }
 
+    @NotNull
     String getRelativeResourcePrefix() {
         return RES_LOC;
     }
@@ -396,14 +400,11 @@ public class ConfigurationSerializerWebConsolePlugin extends GenericServlet {
      * Method to retrieve static resources from this bundle.
      */
     @SuppressWarnings("unused")
-    private URL getResource(final String path) {
+    private @Nullable URL getResource(@NotNull final String path) {
         if (path.startsWith("/" + getRelativeResourcePrefix())) {
             // strip label
-            int index = path.indexOf('/', 1);
-            if (index <= 0) {
-                throw new IllegalStateException("The relativeResourcePrefix must contain at least one '/'");
-            }
-            return this.getClass().getResource(path.substring(index));
+            String resPath = path.substring(LABEL.length() + 1);
+            return this.getClass().getResource(resPath);
         }
         return null;
     }
