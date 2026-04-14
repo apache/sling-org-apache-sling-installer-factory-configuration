@@ -1,7 +1,7 @@
 Import-Package: !org.osgi.service.metatype, \
   !org.apache.felix.webconsole.spi,\
-  javax.servlet;resolution:=optional,\
+  jakarta.servlet;resolution:=optional,\
   *
 DynamicImport-Package: org.osgi.service.metatype, \
   org.apache.felix.webconsole.spi, \
-  javax.servlet
+  jakarta.servlet
